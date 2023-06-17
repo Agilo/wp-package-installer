@@ -1,0 +1,28 @@
+{
+    "name": "agilo/wp-package-installer",
+    "type": "composer-plugin",
+    "config": {
+        "sort-packages": true
+    },
+    "autoload": {
+        "psr-4": {
+            "Agilo\\WpPackageInstaller\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Ivo Limic",
+            "email": "ivo@convertiv.com"
+        }
+    ],
+    "require": {
+        "php": "^7.4 || ^8.0",
+        "composer-plugin-api": "^2.0"
+    },
+    "extra": {
+        "class": "Agilo\\WpPackageInstaller\\Plugin"
+    },
+    "require-dev": {
+        "composer/composer": "^2.0"
+    }
+}

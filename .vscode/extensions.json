@@ -1,0 +1,7 @@
+{
+  // List of recommended extensions
+  "recommendations": [
+    "bmewburn.vscode-intelephense-client",
+    "xdebug.php-debug",
+  ]
+}
