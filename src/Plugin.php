@@ -13,6 +13,7 @@ use Composer\Script\Event;
 use Composer\Script\ScriptEvents;
 use Composer\Util\Filesystem;
 use DirectoryIterator;
+use Throwable;
 
 class Plugin implements PluginInterface, EventSubscriberInterface
 {
@@ -22,72 +23,74 @@ class Plugin implements PluginInterface, EventSubscriberInterface
      * https://github.com/composer/installers/blob/main/src/Composer/Installers/WordPressInstaller.php
      * 
      * @var array<string, string>
+     * 
+     * eg.:
+     * 'bin/wp-content/plugins/'    => 'public/wp-content/plugins/',
+     * 'bin/wp-content/themes/'     => 'public/wp-content/themes/',
+     * 'bin/wp-content/mu-plugins/' => 'public/wp-content/mu-plugins/',
+     * 'bin/wp-content/dropins/'    => 'public/wp-content/',
      */
-    private array $from_locations = [
-        'plugin'   => 'wp-content/plugins/{$name}/',
-        'theme'    => 'wp-content/themes/{$name}/',
-        'muplugin' => 'wp-content/mu-plugins/{$name}/',
-        'dropin'   => 'wp-content/{$name}/',
-    ];
+    private array $locations = [];
 
-    /**
-     * Relative paths to where the packages should be copied to.
-     */
-    private array $to_locations = [
-        'plugin'   => 'wp-content/plugins/',
-        'theme'    => 'wp-content/themes/',
-        'muplugin' => 'wp-content/mu-plugins/',
-        'dropin'   => 'wp-content/',
-    ];
+    // /**
+    //  * Relative paths to where the packages should be copied to.
+    //  */
+    // private array $to_locations = [
+    //     'plugin'   => 'wp-content/plugins/',
+    //     'theme'    => 'wp-content/themes/',
+    //     'muplugin' => 'wp-content/mu-plugins/',
+    //     'dropin'   => 'wp-content/',
+    // ];
 
     private Composer $composer;
     private IOInterface $io;
 
     public function activate(Composer $composer, IOInterface $io)
     {
+        if (function_exists('xdebug_break')) {
+            // var_dump(\xdebug_break());
+        }
+
         $this->composer = $composer;
         $this->io = $io;
         echo 'Plugin::activate' . PHP_EOL;
 
-        if (function_exists('xdebug_break')) {
-            var_dump(\xdebug_break());
-        }
         $extra = $this->composer->getPackage()->getExtra();
         var_dump($extra);
 
-        $this->mapFromLocations($extra);
-        $this->mapToLocations($extra);
+        // $this->mapFromLocations($extra);
+        $this->mapLocations($extra);
     }
 
-    private function mapFromLocations(array $extra): void
-    {
-        if (!isset($extra['installer-paths'])) {
-            return;
-        }
+    // private function mapFromLocations(array $extra): void
+    // {
+    //     if (!isset($extra['installer-paths'])) {
+    //         return;
+    //     }
 
-        if (!is_array($extra['installer-paths'])) {
-            return;
-        }
+    //     if (!is_array($extra['installer-paths'])) {
+    //         return;
+    //     }
 
-        /**
-         * original code that determines the path from composer/installers can be found here:
-         * https://github.com/composer/installers/blob/main/src/Composer/Installers/BaseInstaller.php#LL116C34-L116C34
-         */
-        foreach ($extra['installer-paths'] as $path => $names) {
-            $names = (array) $names;
-            if (in_array('type:wordpress-plugin', $names, true)) {
-                $this->from_locations['plugin'] = $path;
-            } elseif (in_array('type:wordpress-theme', $names, true)) {
-                $this->from_locations['theme'] = $path;
-            } elseif (in_array('type:wordpress-muplugin', $names, true)) {
-                $this->from_locations['muplugin'] = $path;
-            } elseif (in_array('type:wordpress-dropin', $names, true)) {
-                $this->from_locations['dropin'] = $path;
-            }
-        }
-    }
+    //     /**
+    //      * original code that determines the path from composer/installers can be found here:
+    //      * https://github.com/composer/installers/blob/main/src/Composer/Installers/BaseInstaller.php#LL116C34-L116C34
+    //      */
+    //     foreach ($extra['installer-paths'] as $path => $names) {
+    //         $names = (array) $names;
+    //         if (in_array('type:wordpress-plugin', $names, true)) {
+    //             $this->from_locations['plugin'] = $path;
+    //         } elseif (in_array('type:wordpress-theme', $names, true)) {
+    //             $this->from_locations['theme'] = $path;
+    //         } elseif (in_array('type:wordpress-muplugin', $names, true)) {
+    //             $this->from_locations['muplugin'] = $path;
+    //         } elseif (in_array('type:wordpress-dropin', $names, true)) {
+    //             $this->from_locations['dropin'] = $path;
+    //         }
+    //     }
+    // }
 
-    private function mapToLocations(array $extra): void
+    private function mapLocations(array $extra): void
     {
         if (!isset($extra['agilo-wp-package-installer-paths'])) {
             return;
@@ -101,27 +104,20 @@ class Plugin implements PluginInterface, EventSubscriberInterface
          * original code that determines the path from composer/installers can be found here:
          * https://github.com/composer/installers/blob/main/src/Composer/Installers/BaseInstaller.php#LL116C34-L116C34
          */
-        foreach ($extra['agilo-wp-package-installer-paths'] as $path => $names) {
-            $names = (array) $names;
-            if (in_array('type:wordpress-plugin', $names, true)) {
-                $this->to_locations['plugin'] = $path;
-            } elseif (in_array('type:wordpress-theme', $names, true)) {
-                $this->to_locations['theme'] = $path;
-            } elseif (in_array('type:wordpress-muplugin', $names, true)) {
-                $this->to_locations['muplugin'] = $path;
-            } elseif (in_array('type:wordpress-dropin', $names, true)) {
-                $this->to_locations['dropin'] = $path;
+        foreach ($extra['agilo-wp-package-installer-paths'] as $from_path => $to_path) {
+            if (is_string($from_path) && is_string($to_path)) {
+                $this->locations[$from_path] = $to_path;
             }
         }
     }
 
-    private function getToLocationByPackageType(string $type): ?string
-    {
-        if (substr($type, 0, 9) === 'wordpress') {
-            return $this->to_locations[substr($type, 10)] ?? null;
-        }
-        return null;
-    }
+    // private function getToLocationByPackageType(string $type): ?string
+    // {
+    //     if (substr($type, 0, 9) === 'wordpress') {
+    //         return $this->to_locations[substr($type, 10)] ?? null;
+    //     }
+    //     return null;
+    // }
 
     public function deactivate(Composer $composer, IOInterface $io)
     {
@@ -149,18 +145,22 @@ class Plugin implements PluginInterface, EventSubscriberInterface
         // var_dump(\xdebug_break());
         echo 'Plugin::onPostUpdateCmd' . PHP_EOL;
         $fs = new Filesystem;
-        $it = new DirectoryIterator('bin/wp-content/plugins');
-        foreach ($it as $fileinfo) {
-            if ($fileinfo->isDot()) {
-                continue;
-            }
-            // var_dump(\xdebug_break());
-            // var_dump($fileinfo->getFilename());
 
-            $fs->relativeSymlink(
-                $fileinfo->getRealPath(),
-                realpath('public/wp-content/plugins').'/'.$fileinfo->getFilename()
-            );
+        foreach ($this->locations as $from_path => $to_path) {
+            try {
+                $it = new DirectoryIterator($from_path);
+                foreach ($it as $fileinfo) {
+                    if ($fileinfo->isDot()) {
+                        // skip . & ..
+                        continue;
+                    }
+                    // var_dump(\xdebug_break());
+                    // var_dump($fileinfo->getFilename());
+                    $fs->relativeSymlink($fileinfo->getRealPath(), realpath($to_path).'/'.$fileinfo->getFilename());
+                }
+            } catch (Throwable $t) {
+                // DirectoryIterator can throw
+            }
         }
     }
 
@@ -168,22 +168,29 @@ class Plugin implements PluginInterface, EventSubscriberInterface
     {
         echo 'Plugin::onPostPackageUninstall' . PHP_EOL;
 
+        if (function_exists('xdebug_break')) {
+            var_dump(\xdebug_break());
+        }
+
         $operation = $event->getOperation();
         if (!($operation instanceof UninstallOperation)) {
             return;
         }
 
         $package = $operation->getPackage();
-        if (in_array($package->getType(), ['wordpress-plugin', 'wordpress-theme', 'wordpress-muplugin', 'wordpress-dropin'], true)) {
-            $fs = new Filesystem;
-            $path = $this->getToLocationByPackageType($package->getType());
-            if ($path) {
-                $fs->remove($path.basename($this->composer->getInstallationManager()->getInstallPath($package)));
+        $installPath = $this->composer->getInstallationManager()->getInstallPath($package);
+
+        if ($installPath) {
+            foreach ($this->locations as $from_path => $to_path) {
+                if (realpath($from_path) === dirname($installPath)) {
+                    $fs = new Filesystem;
+                    $pathToRemove = $to_path.basename($installPath);
+                    // $fs->remove($pathToRemove);
+                    // $remove = $fs->remove($pathToRemove);
+                    $remove = $fs->unlink($pathToRemove);
+                    return;
+                }
             }
-        }
-        if ($package->getType() === 'wordpress-plugin') {
-            $fs = new Filesystem;
-            $fs->remove('public/wp-content/plugins/' . basename($this->composer->getInstallationManager()->getInstallPath($package)));
         }
     }
 
