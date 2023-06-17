@@ -24,20 +24,20 @@ class Plugin implements PluginInterface, EventSubscriberInterface
      * @var array<string, string>
      */
     private array $from_locations = [
-        'plugin'    => 'wp-content/plugins/{$name}/',
-        'theme'     => 'wp-content/themes/{$name}/',
-        'muplugin'  => 'wp-content/mu-plugins/{$name}/',
-        'dropin'    => 'wp-content/{$name}/',
+        'plugin'   => 'wp-content/plugins/{$name}/',
+        'theme'    => 'wp-content/themes/{$name}/',
+        'muplugin' => 'wp-content/mu-plugins/{$name}/',
+        'dropin'   => 'wp-content/{$name}/',
     ];
 
     /**
      * Relative paths to where the packages should be copied to.
      */
     private array $to_locations = [
-        'plugin'    => 'wp-content/plugins/{$name}/',
-        'theme'     => 'wp-content/themes/{$name}/',
-        'muplugin'  => 'wp-content/mu-plugins/{$name}/',
-        'dropin'    => 'wp-content/{$name}/',
+        'plugin'   => 'wp-content/plugins/',
+        'theme'    => 'wp-content/themes/',
+        'muplugin' => 'wp-content/mu-plugins/',
+        'dropin'   => 'wp-content/',
     ];
 
     private Composer $composer;
@@ -49,7 +49,9 @@ class Plugin implements PluginInterface, EventSubscriberInterface
         $this->io = $io;
         echo 'Plugin::activate' . PHP_EOL;
 
-        var_dump(\xdebug_break());
+        if (function_exists('xdebug_break')) {
+            var_dump(\xdebug_break());
+        }
         $extra = $this->composer->getPackage()->getExtra();
         var_dump($extra);
 
@@ -113,6 +115,14 @@ class Plugin implements PluginInterface, EventSubscriberInterface
         }
     }
 
+    private function getToLocationByPackageType(string $type): ?string
+    {
+        if (substr($type, 0, 9) === 'wordpress') {
+            return $this->to_locations[substr($type, 10)] ?? null;
+        }
+        return null;
+    }
+
     public function deactivate(Composer $composer, IOInterface $io)
     {
         echo 'Plugin::deactivate' . PHP_EOL;
@@ -164,6 +174,13 @@ class Plugin implements PluginInterface, EventSubscriberInterface
         }
 
         $package = $operation->getPackage();
+        if (in_array($package->getType(), ['wordpress-plugin', 'wordpress-theme', 'wordpress-muplugin', 'wordpress-dropin'], true)) {
+            $fs = new Filesystem;
+            $path = $this->getToLocationByPackageType($package->getType());
+            if ($path) {
+                $fs->remove($path.basename($this->composer->getInstallationManager()->getInstallPath($package)));
+            }
+        }
         if ($package->getType() === 'wordpress-plugin') {
             $fs = new Filesystem;
             $fs->remove('public/wp-content/plugins/' . basename($this->composer->getInstallationManager()->getInstallPath($package)));
