@@ -19,17 +19,17 @@ use Throwable;
 class Plugin implements PluginInterface, EventSubscriberInterface
 {
     /**
-     * Relative paths to where the packages should be copied from.
-     * 
-     * https://github.com/composer/installers/blob/main/src/Composer/Installers/WordPressInstaller.php
+     * Relative path mapping of where the packages should be copied from and to. Example:
+     * ```php
+     * private array $locations = [
+     *     'bin/wp-content/plugins/'    => 'public/wp-content/plugins/',
+     *     'bin/wp-content/themes/'     => 'public/wp-content/themes/',
+     *     'bin/wp-content/mu-plugins/' => 'public/wp-content/mu-plugins/',
+     *     'bin/wp-content/dropins/'    => 'public/wp-content/',
+     * ];
+     * ```
      * 
      * @var array<string, string>
-     * 
-     * eg.:
-     * 'bin/wp-content/plugins/'    => 'public/wp-content/plugins/',
-     * 'bin/wp-content/themes/'     => 'public/wp-content/themes/',
-     * 'bin/wp-content/mu-plugins/' => 'public/wp-content/mu-plugins/',
-     * 'bin/wp-content/dropins/'    => 'public/wp-content/',
      */
     private array $locations = [];
 
