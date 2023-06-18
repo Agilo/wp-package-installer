@@ -39,6 +39,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
 
     public function activate(Composer $composer, IOInterface $io)
     {
+        echo __CLASS__.'::activate'.PHP_EOL;
         if (function_exists('xdebug_break')) {
             // var_dump(\xdebug_break());
         }
@@ -94,12 +95,12 @@ class Plugin implements PluginInterface, EventSubscriberInterface
 
     public function deactivate(Composer $composer, IOInterface $io)
     {
-        echo 'Plugin::deactivate' . PHP_EOL;
+        echo __CLASS__.'::deactivated'.PHP_EOL;
     }
 
     public function uninstall(Composer $composer, IOInterface $io)
     {
-        echo 'Plugin::uninstall' . PHP_EOL;
+        echo __CLASS__.'::uninstall'.PHP_EOL;
     }
 
     public static function getSubscribedEvents()
