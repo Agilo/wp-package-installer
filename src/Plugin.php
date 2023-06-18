@@ -36,7 +36,6 @@ class Plugin implements PluginInterface, EventSubscriberInterface
     private bool $symlinkedBuild = true;
 
     private Composer $composer;
-    private IOInterface $io;
 
     public function activate(Composer $composer, IOInterface $io)
     {
