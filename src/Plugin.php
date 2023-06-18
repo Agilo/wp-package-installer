@@ -40,45 +40,10 @@ class Plugin implements PluginInterface, EventSubscriberInterface
         if (function_exists('xdebug_break')) {
             // var_dump(\xdebug_break());
         }
-
         $this->composer = $composer;
-        $this->io = $io;
-        echo 'Plugin::activate' . PHP_EOL;
-
         $extra = $this->composer->getPackage()->getExtra();
-        var_dump($extra);
-
-        // $this->mapFromLocations($extra);
         $this->mapLocations($extra);
     }
-
-    // private function mapFromLocations(array $extra): void
-    // {
-    //     if (!isset($extra['installer-paths'])) {
-    //         return;
-    //     }
-
-    //     if (!is_array($extra['installer-paths'])) {
-    //         return;
-    //     }
-
-    //     /**
-    //      * original code that determines the path from composer/installers can be found here:
-    //      * https://github.com/composer/installers/blob/main/src/Composer/Installers/BaseInstaller.php#LL116C34-L116C34
-    //      */
-    //     foreach ($extra['installer-paths'] as $path => $names) {
-    //         $names = (array) $names;
-    //         if (in_array('type:wordpress-plugin', $names, true)) {
-    //             $this->from_locations['plugin'] = $path;
-    //         } elseif (in_array('type:wordpress-theme', $names, true)) {
-    //             $this->from_locations['theme'] = $path;
-    //         } elseif (in_array('type:wordpress-muplugin', $names, true)) {
-    //             $this->from_locations['muplugin'] = $path;
-    //         } elseif (in_array('type:wordpress-dropin', $names, true)) {
-    //             $this->from_locations['dropin'] = $path;
-    //         }
-    //     }
-    // }
 
     private function mapLocations(array $extra): void
     {
@@ -132,8 +97,6 @@ class Plugin implements PluginInterface, EventSubscriberInterface
 
     public function onPostUpdateCmd(Event $event): void
     {
-        // var_dump(\xdebug_break());
-        echo 'Plugin::onPostUpdateCmd' . PHP_EOL;
         $fs = new Filesystem;
 
         foreach ($this->locations as $from_path => $to_path) {
@@ -156,8 +119,6 @@ class Plugin implements PluginInterface, EventSubscriberInterface
 
     public function onPostPackageUninstall(PackageEvent $event): void
     {
-        echo 'Plugin::onPostPackageUninstall' . PHP_EOL;
-
         if (function_exists('xdebug_break')) {
             var_dump(\xdebug_break());
         }
