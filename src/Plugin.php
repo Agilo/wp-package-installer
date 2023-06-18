@@ -118,7 +118,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
             try {
                 $it = new FilesystemIterator($from_path, FilesystemIterator::SKIP_DOTS);
                 foreach ($it as $fileinfo) {
-                    var_dump(\xdebug_break());
+                    // var_dump(\xdebug_break());
                     $target = realpath($to_path).'/'.$fileinfo->getFilename();
                     self::remove($fs, $target);
                     if ($this->symlinkedBuild) {
