@@ -13,6 +13,7 @@ use Composer\Script\Event;
 use Composer\Script\ScriptEvents;
 use Composer\Util\Filesystem;
 use FilesystemIterator;
+use InvalidArgumentException;
 use Throwable;
 
 class Plugin implements PluginInterface, EventSubscriberInterface
@@ -64,28 +65,28 @@ class Plugin implements PluginInterface, EventSubscriberInterface
     private function mapLocations(array $extra): void
     {
         if (!isset($extra['agilo-wp-package-installer-paths'])) {
-            throw new \InvalidArgumentException('composer.json::extra::agilo-wp-package-installer-paths is missing.');
+            throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer-paths is missing.');
         }
 
         if (!is_array($extra['agilo-wp-package-installer-paths'])) {
-            throw new \InvalidArgumentException('composer.json::extra::agilo-wp-package-installer-paths is not an array.');
+            throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer-paths is not an array.');
         }
 
         $fs = new Filesystem;
         foreach ($extra['agilo-wp-package-installer-paths'] as $from_path => $to_path) {
             if (!is_string($from_path)) {
-                throw new \InvalidArgumentException('composer.json::extra::agilo-wp-package-installer-paths key is not a string.');
+                throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer-paths key is not a string.');
             }
             $from_path = $fs->trimTrailingSlash($from_path);
             if ($from_path === '') {
-                throw new \InvalidArgumentException('composer.json::extra::agilo-wp-package-installer-paths key is empty.');
+                throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer-paths key is empty.');
             }
             if (!is_string($to_path)) {
-                throw new \InvalidArgumentException('composer.json::extra::agilo-wp-package-installer-paths value is not a string.');
+                throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer-paths value is not a string.');
             }
             $to_path = $fs->trimTrailingSlash($to_path);
             if ($to_path === '') {
-                throw new \InvalidArgumentException('composer.json::extra::agilo-wp-package-installer-paths value is empty.');
+                throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer-paths value is empty.');
             }
             $fs->ensureDirectoryExists($to_path);
             $this->locations[$from_path] = $to_path;
