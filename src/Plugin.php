@@ -32,6 +32,8 @@ class Plugin implements PluginInterface, EventSubscriberInterface
      */
     private array $locations = [];
 
+    private bool $symlinkedBuild = true;
+
     private Composer $composer;
     private IOInterface $io;
 
@@ -42,6 +44,20 @@ class Plugin implements PluginInterface, EventSubscriberInterface
         }
         $this->composer = $composer;
         $extra = $this->composer->getPackage()->getExtra();
+
+        if (
+            isset($extra['agilo-wp-package-installer-symlinked-build'])
+            && is_bool($extra['agilo-wp-package-installer-symlinked-build'])
+        ) {
+            $this->symlinkedBuild = $extra['agilo-wp-package-installer-symlinked-build'];
+        }
+        // Allow overriding via environment variable.
+        if (getenv('AGILO_WP_PACKAGE_INSTALLER_SYMLINKED_BUILD') === '0') {
+            $this->symlinkedBuild = false;
+        } elseif (getenv('AGILO_WP_PACKAGE_INSTALLER_SYMLINKED_BUILD') === '1') {
+            $this->symlinkedBuild = true;
+        }
+
         $this->mapLocations($extra);
     }
 
@@ -98,7 +114,6 @@ class Plugin implements PluginInterface, EventSubscriberInterface
     public function onPostUpdateCmd(Event $event): void
     {
         $fs = new Filesystem;
-
         foreach ($this->locations as $from_path => $to_path) {
             try {
                 $it = new DirectoryIterator($from_path);
@@ -107,9 +122,14 @@ class Plugin implements PluginInterface, EventSubscriberInterface
                         // skip . & ..
                         continue;
                     }
-                    // var_dump(\xdebug_break());
-                    // var_dump($fileinfo->getFilename());
-                    $fs->relativeSymlink($fileinfo->getRealPath(), realpath($to_path).'/'.$fileinfo->getFilename());
+                    var_dump(\xdebug_break());
+                    $target = realpath($to_path).'/'.$fileinfo->getFilename();
+                    self::remove($fs, $target);
+                    if ($this->symlinkedBuild) {
+                        $fs->relativeSymlink($fileinfo->getRealPath(), $target);
+                    } else {
+                        $fs->copy($fileinfo->getRealPath(), $target);
+                    }
                 }
             } catch (Throwable $t) {
                 // DirectoryIterator can throw
@@ -136,12 +156,18 @@ class Plugin implements PluginInterface, EventSubscriberInterface
                 if (realpath($from_path) === dirname($installPath)) {
                     $fs = new Filesystem;
                     $pathToRemove = $to_path.'/'.basename($installPath);
-                    // $fs->remove($pathToRemove);
-                    // $remove = $fs->remove($pathToRemove);
-                    $remove = $fs->unlink($pathToRemove);
+                    self::remove($fs, $pathToRemove);
                     return;
                 }
             }
         }
+    }
+
+    private static function remove(Filesystem $fs, string $path): bool
+    {
+        if (is_link($path)) {
+            return $fs->unlink($path);
+        }
+        return $fs->remove($path);
     }
 }
