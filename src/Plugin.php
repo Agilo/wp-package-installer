@@ -32,16 +32,6 @@ class Plugin implements PluginInterface, EventSubscriberInterface
      */
     private array $locations = [];
 
-    // /**
-    //  * Relative paths to where the packages should be copied to.
-    //  */
-    // private array $to_locations = [
-    //     'plugin'   => 'wp-content/plugins/',
-    //     'theme'    => 'wp-content/themes/',
-    //     'muplugin' => 'wp-content/mu-plugins/',
-    //     'dropin'   => 'wp-content/',
-    // ];
-
     private Composer $composer;
     private IOInterface $io;
 
@@ -93,31 +83,33 @@ class Plugin implements PluginInterface, EventSubscriberInterface
     private function mapLocations(array $extra): void
     {
         if (!isset($extra['agilo-wp-package-installer-paths'])) {
-            return;
+            throw new \InvalidArgumentException('composer.json::extra::agilo-wp-package-installer-paths is missing.');
         }
 
         if (!is_array($extra['agilo-wp-package-installer-paths'])) {
-            return;
+            throw new \InvalidArgumentException('composer.json::extra::agilo-wp-package-installer-paths is not an array.');
         }
 
-        /**
-         * original code that determines the path from composer/installers can be found here:
-         * https://github.com/composer/installers/blob/main/src/Composer/Installers/BaseInstaller.php#LL116C34-L116C34
-         */
+        $fs = new Filesystem;
         foreach ($extra['agilo-wp-package-installer-paths'] as $from_path => $to_path) {
-            if (is_string($from_path) && is_string($to_path)) {
-                $this->locations[$from_path] = $to_path;
+            if (!is_string($from_path)) {
+                throw new \InvalidArgumentException('composer.json::extra::agilo-wp-package-installer-paths key is not a string.');
             }
+            $from_path = $fs->trimTrailingSlash($from_path);
+            if ($from_path === '') {
+                throw new \InvalidArgumentException('composer.json::extra::agilo-wp-package-installer-paths key is empty.');
+            }
+            if (!is_string($to_path)) {
+                throw new \InvalidArgumentException('composer.json::extra::agilo-wp-package-installer-paths value is not a string.');
+            }
+            $to_path = $fs->trimTrailingSlash($to_path);
+            if ($to_path === '') {
+                throw new \InvalidArgumentException('composer.json::extra::agilo-wp-package-installer-paths value is empty.');
+            }
+            $fs->ensureDirectoryExists($to_path);
+            $this->locations[$from_path] = $to_path;
         }
     }
-
-    // private function getToLocationByPackageType(string $type): ?string
-    // {
-    //     if (substr($type, 0, 9) === 'wordpress') {
-    //         return $this->to_locations[substr($type, 10)] ?? null;
-    //     }
-    //     return null;
-    // }
 
     public function deactivate(Composer $composer, IOInterface $io)
     {
@@ -135,8 +127,6 @@ class Plugin implements PluginInterface, EventSubscriberInterface
             ScriptEvents::POST_INSTALL_CMD => 'onPostUpdateCmd',
             ScriptEvents::POST_UPDATE_CMD => 'onPostUpdateCmd',
             PackageEvents::POST_PACKAGE_UNINSTALL => 'onPostPackageUninstall',
-            // PackageEvents::POST_PACKAGE_INSTALL => 'onPostPackageInstall',
-            // PackageEvents::POST_PACKAGE_UPDATE => 'onPostPackageUpdate',
         ];
     }
 
@@ -184,7 +174,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
             foreach ($this->locations as $from_path => $to_path) {
                 if (realpath($from_path) === dirname($installPath)) {
                     $fs = new Filesystem;
-                    $pathToRemove = $to_path.basename($installPath);
+                    $pathToRemove = $to_path.'/'.basename($installPath);
                     // $fs->remove($pathToRemove);
                     // $remove = $fs->remove($pathToRemove);
                     $remove = $fs->unlink($pathToRemove);
@@ -193,62 +183,4 @@ class Plugin implements PluginInterface, EventSubscriberInterface
             }
         }
     }
-
-    // public function onPostPackageInstall(PackageEvent $event): void
-    // {
-    //     echo 'Plugin::onPostPackageInstall' . PHP_EOL;
-    //     var_dump($event->getName());
-    //     file_put_contents(__DIR__ . '/test.txt', print_r($event->getOperation(), true), FILE_APPEND);
-
-    //     $operation = $event->getOperation();
-    //     if (!($operation instanceof InstallOperation)) {
-    //         return;
-    //     }
-
-    //     $package = $operation->getPackage();
-    //     var_dump($package->getType());
-    //     var_dump($package->getName());
-    //     var_dump($package->getId());
-    //     var_dump($package->getTargetDir());
-    //     var_dump($this->composer->getInstallationManager()->getInstallPath($package));
-    //     if ($package->getType() === 'wordpress-plugin') {
-    //         // copy_dir();
-    //         // $fs = new Filesystem;
-    //         // $fs->copy(
-    //         //     $this->composer->getInstallationManager()->getInstallPath($package),
-    //         //     'public/wp-content/plugins/' . $package->getPrettyName(),
-    //         // );
-    //     }
-
-    //     // new InstallOperation;
-    //     // new Composer\DependencyResolver\Operation\InstallOperation;
-    //     // new InstallOperation;
-    // }
-
-    // public function onPostPackageUpdate(PackageEvent $event): void
-    // {
-    //     echo 'Plugin::onPostPackageUpdate' . PHP_EOL;
-    //     var_dump($event->getName());
-    //     // file_put_contents(__DIR__ . '/test.txt', print_r($event->getOperation(), true), FILE_APPEND);
-
-    //     $operation = $event->getOperation();
-    //     if (!($operation instanceof UpdateOperation)) {
-    //         return;
-    //     }
-
-    //     $package = $operation->getTargetPackage();
-    //     // file_put_contents(__DIR__ . '/composer.txt', print_r($this->composer, true));
-    //     // $this->composer->
-    //     // file_put_contents(__DIR__ . '/onPostPackageUpdate.txt', print_r($package, true));
-    //     var_dump($package->getType());
-    //     var_dump($package->getTargetDir());
-    //     var_dump($this->composer->getInstallationManager()->getInstallPath($package));
-    //     // if ($package->getType() === 'wordpress-plugin') {
-    //     //     $fs = new Filesystem;
-    //     //     $fs->copy(
-    //     //         $this->composer->getInstallationManager()->getInstallPath($package),
-    //     //         'public/wp-content/plugins/' . basename($this->composer->getInstallationManager()->getInstallPath($package))
-    //     //     );
-    //     // }
-    // }
 }
