@@ -32,7 +32,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
      *     'bin/wp-content/dropins/'    => 'public/wp-content/',
      * ];
      * ```
-     * 
+     *
      * @var array<string, string>
      */
     private array $locations = [];
@@ -82,7 +82,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
             throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer-paths is not an array.');
         }
 
-        $fs = new Filesystem;
+        $fs = new Filesystem();
         foreach ($extra['agilo-wp-package-installer-paths'] as $from_path => $to_path) {
             if (!is_string($from_path)) {
                 throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer-paths key is not a string.');
@@ -135,7 +135,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
             }
         }
 
-        $fs = new Filesystem;
+        $fs = new Filesystem();
         foreach ($this->locations as $from_path => $to_path) {
             try {
                 $it = new FilesystemIterator($from_path, FilesystemIterator::SKIP_DOTS);
@@ -174,7 +174,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
         if ($installPath) {
             foreach ($this->locations as $from_path => $to_path) {
                 if (realpath($from_path) === dirname($installPath)) {
-                    $fs = new Filesystem;
+                    $fs = new Filesystem();
                     $pathToRemove = $to_path.'/'.basename($installPath);
                     self::remove($fs, $pathToRemove);
                     return;
