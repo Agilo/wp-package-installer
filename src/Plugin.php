@@ -18,6 +18,10 @@ use Throwable;
 
 class Plugin implements PluginInterface, EventSubscriberInterface
 {
+    private bool $debug = false;
+
+    private bool $symlinkedBuild = true;
+
     /**
      * Relative path mapping of where the packages should be copied from and to. Example:
      * ```php
@@ -33,16 +37,21 @@ class Plugin implements PluginInterface, EventSubscriberInterface
      */
     private array $locations = [];
 
-    private bool $symlinkedBuild = true;
-
     private Composer $composer;
 
     public function activate(Composer $composer, IOInterface $io)
     {
-        echo __CLASS__.'::activate'.PHP_EOL;
-        if (function_exists('xdebug_break')) {
-            // var_dump(\xdebug_break());
+        if (getenv('AGILO_WP_PACKAGE_INSTALLER_DEBUG') === '1') {
+            $this->debug = true;
         }
+
+        if ($this->debug) {
+            echo __CLASS__.'::activate'.PHP_EOL;
+            if (function_exists('xdebug_break')) {
+                xdebug_break();
+            }
+        }
+
         $this->composer = $composer;
         $extra = $this->composer->getPackage()->getExtra();
 
@@ -52,6 +61,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
         ) {
             $this->symlinkedBuild = $extra['agilo-wp-package-installer-symlinked-build'];
         }
+
         // Allow overriding via environment variable.
         if (getenv('AGILO_WP_PACKAGE_INSTALLER_SYMLINKED_BUILD') === '0') {
             $this->symlinkedBuild = false;
@@ -95,12 +105,16 @@ class Plugin implements PluginInterface, EventSubscriberInterface
 
     public function deactivate(Composer $composer, IOInterface $io)
     {
-        echo __CLASS__.'::deactivated'.PHP_EOL;
+        if ($this->debug) {
+            echo __CLASS__.'::deactivated'.PHP_EOL;
+        }
     }
 
     public function uninstall(Composer $composer, IOInterface $io)
     {
-        echo __CLASS__.'::uninstall'.PHP_EOL;
+        if ($this->debug) {
+            echo __CLASS__.'::uninstall'.PHP_EOL;
+        }
     }
 
     public static function getSubscribedEvents()
@@ -114,12 +128,18 @@ class Plugin implements PluginInterface, EventSubscriberInterface
 
     public function onPostUpdateCmd(Event $event): void
     {
+        if ($this->debug) {
+            echo __CLASS__.'::onPostUpdateCmd'.PHP_EOL;
+            if (function_exists('xdebug_break')) {
+                xdebug_break();
+            }
+        }
+
         $fs = new Filesystem;
         foreach ($this->locations as $from_path => $to_path) {
             try {
                 $it = new FilesystemIterator($from_path, FilesystemIterator::SKIP_DOTS);
                 foreach ($it as $fileinfo) {
-                    // var_dump(\xdebug_break());
                     $target = realpath($to_path).'/'.$fileinfo->getFilename();
                     self::remove($fs, $target);
                     if ($this->symlinkedBuild) {
@@ -136,8 +156,11 @@ class Plugin implements PluginInterface, EventSubscriberInterface
 
     public function onPostPackageUninstall(PackageEvent $event): void
     {
-        if (function_exists('xdebug_break')) {
-            var_dump(\xdebug_break());
+        if ($this->debug) {
+            echo __CLASS__.'::onPostPackageUninstall'.PHP_EOL;
+            if (function_exists('xdebug_break')) {
+                xdebug_break();
+            }
         }
 
         $operation = $event->getOperation();
