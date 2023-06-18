@@ -12,7 +12,7 @@ use Composer\Plugin\PluginInterface;
 use Composer\Script\Event;
 use Composer\Script\ScriptEvents;
 use Composer\Util\Filesystem;
-use DirectoryIterator;
+use FilesystemIterator;
 use Throwable;
 
 class Plugin implements PluginInterface, EventSubscriberInterface
@@ -116,12 +116,8 @@ class Plugin implements PluginInterface, EventSubscriberInterface
         $fs = new Filesystem;
         foreach ($this->locations as $from_path => $to_path) {
             try {
-                $it = new DirectoryIterator($from_path);
+                $it = new FilesystemIterator($from_path, FilesystemIterator::SKIP_DOTS);
                 foreach ($it as $fileinfo) {
-                    if ($fileinfo->isDot()) {
-                        // skip . & ..
-                        continue;
-                    }
                     var_dump(\xdebug_break());
                     $target = realpath($to_path).'/'.$fileinfo->getFilename();
                     self::remove($fs, $target);
@@ -132,7 +128,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
                     }
                 }
             } catch (Throwable $t) {
-                // DirectoryIterator can throw
+                // FilesystemIterator can throw
             }
         }
     }
