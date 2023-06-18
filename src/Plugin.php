@@ -18,9 +18,11 @@ use Throwable;
 
 class Plugin implements PluginInterface, EventSubscriberInterface
 {
-    private bool $debug = false;
+    /** @var bool */
+    private $debug = false;
 
-    private bool $symlinkedBuild = true;
+    /** @var bool */
+    private $symlinkedBuild = true;
 
     /**
      * Relative path mapping of where the packages should be copied from and to. Example:
@@ -35,9 +37,10 @@ class Plugin implements PluginInterface, EventSubscriberInterface
      *
      * @var array<string, string>
      */
-    private array $locations = [];
+    private $locations = [];
 
-    private Composer $composer;
+    /** @var Composer */
+    private $composer;
 
     public function activate(Composer $composer, IOInterface $io)
     {
@@ -87,14 +90,20 @@ class Plugin implements PluginInterface, EventSubscriberInterface
             if (!is_string($from_path)) {
                 throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer-paths key is not a string.');
             }
-            $from_path = $fs->trimTrailingSlash($from_path);
+
+            // strip trailing slashes
+            $from_path = rtrim($from_path, '/\\');
+
             if ($from_path === '') {
                 throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer-paths key is empty.');
             }
             if (!is_string($to_path)) {
                 throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer-paths value is not a string.');
             }
-            $to_path = $fs->trimTrailingSlash($to_path);
+
+            // strip trailing slashes
+            $to_path = rtrim($to_path, '/\\');
+
             if ($to_path === '') {
                 throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer-paths value is empty.');
             }
