@@ -95,12 +95,14 @@ class Plugin implements PluginInterface, EventSubscriberInterface
 
         $this->composer = $composer;
         $extra = $this->composer->getPackage()->getExtra();
+        $settings = $extra['agilo-wp-package-installer'] ?? [];
 
-        if (
-            isset($extra['agilo-wp-package-installer-symlinked-build'])
-            && is_bool($extra['agilo-wp-package-installer-symlinked-build'])
-        ) {
-            $this->symlinkedBuild = $extra['agilo-wp-package-installer-symlinked-build'];
+        if (!is_array($settings)) {
+            throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer value is not an array.');
+        }
+
+        if (isset($settings['symlinked-build']) && is_bool($settings['symlinked-build'])) {
+            $this->symlinkedBuild = $settings['symlinked-build'];
         }
 
         // Allow overriding via environment variable.
