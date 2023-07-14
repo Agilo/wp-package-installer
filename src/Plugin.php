@@ -101,7 +101,10 @@ class Plugin implements PluginInterface, EventSubscriberInterface
             throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer value is not an array.');
         }
 
-        if (isset($settings['symlinked-build']) && is_bool($settings['symlinked-build'])) {
+        if (isset($settings['symlinked-build'])) {
+            if (!is_bool($settings['symlinked-build'])) {
+                throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::symlinked-build value is not a boolean.');
+            }
             $this->symlinkedBuild = $settings['symlinked-build'];
         }
 
@@ -110,6 +113,36 @@ class Plugin implements PluginInterface, EventSubscriberInterface
             $this->symlinkedBuild = false;
         } elseif (getenv('AGILO_WP_PACKAGE_INSTALLER_SYMLINKED_BUILD') === '1') {
             $this->symlinkedBuild = true;
+        }
+
+        if (isset($settings['first-party-src'])) {
+            if (!is_string($settings['first-party-src'])) {
+                throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::first-party-src value is not a string.');
+            }
+            if ($settings['first-party-src'] === '') {
+                throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::first-party-src value is empty.');
+            }
+            $this->firstPartysrc = $settings['first-party-src'];
+        }
+
+        if (isset($settings['third-party-src'])) {
+            if (!is_string($settings['third-party-src'])) {
+                throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::third-party-src value is not a string.');
+            }
+            if ($settings['third-party-src'] === '') {
+                throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::third-party-src value is empty.');
+            }
+            $this->thirdPartySrc = $settings['third-party-src'];
+        }
+
+        if (isset($settings['dest'])) {
+            if (!is_string($settings['dest'])) {
+                throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::dest value is not a string.');
+            }
+            if ($settings['dest'] === '') {
+                throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::dest value is empty.');
+            }
+            $this->dest = $settings['dest'];
         }
 
         $cwd = getcwd();
