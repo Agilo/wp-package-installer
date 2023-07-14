@@ -12,9 +12,10 @@ use Composer\Plugin\PluginInterface;
 use Composer\Script\Event;
 use Composer\Script\ScriptEvents;
 use Composer\Util\Filesystem;
-use FilesystemIterator;
 use InvalidArgumentException;
-use Throwable;
+use RuntimeException;
+use Symfony\Component\Finder\Finder;
+use Symfony\Component\Finder\Glob;
 
 class Plugin implements PluginInterface, EventSubscriberInterface
 {
@@ -25,19 +26,56 @@ class Plugin implements PluginInterface, EventSubscriberInterface
     private $symlinkedBuild = true;
 
     /**
-     * Relative path mapping of where the packages should be copied from and to. Example:
-     * ```php
-     * private array $locations = [
-     *     'bin/wp-content/plugins/'    => 'public/wp-content/plugins/',
-     *     'bin/wp-content/themes/'     => 'public/wp-content/themes/',
-     *     'bin/wp-content/mu-plugins/' => 'public/wp-content/mu-plugins/',
-     *     'bin/wp-content/dropins/'    => 'public/wp-content/',
-     * ];
-     * ```
-     *
-     * @var array<string, string>
+     * Relative path to the source directory without trailing slash.
+     * 
+     * @var string
      */
-    private $locations = [];
+    private $firstPartysrc = 'src';
+
+    private $thirdPartySrc = 'bin';
+
+    /**
+     * Relative path to the destination directory without trailing slash.
+     * 
+     * @var string
+     */
+    private $dest = 'public';
+
+    /**
+     * Absolute path to the source directory without trailing slash.
+     * 
+     * @var string
+     */
+    private $firstPartySrcDir;
+
+    private $thridPartySrcDir;
+
+    /**
+     * Absolute path to the destination directory without trailing slash.
+     * 
+     * @var string
+     */
+    private $destDir;
+
+    /**
+     * First party package relative paths.
+     */
+    private $firstPartySrcPaths = [
+        'wp-config.php',
+        'wp-content/plugins/*',
+        'wp-content/themes/*',
+        'wp-content/mu-plugins/*',
+        'wp-content/languages/*',
+        'wp-content/*.php',
+    ];
+
+    private $thirdPartySrcPaths = [
+        'wp-content/plugins/*',
+        'wp-content/themes/*',
+        'wp-content/mu-plugins/*',
+        'wp-content/languages/*',
+        'wp-content/*.php',
+    ];
 
     /** @var Composer */
     private $composer;
@@ -72,43 +110,29 @@ class Plugin implements PluginInterface, EventSubscriberInterface
             $this->symlinkedBuild = true;
         }
 
-        $this->mapLocations($extra);
+        $cwd = getcwd();
+        if ($cwd === false) {
+            throw new RuntimeException('getcwd() failed.');
+        }
+
+        // TODO: Allow setting $this->firstPartysrc, $this->thirdPartySrc and $this->dest from config.
+
+        $this->firstPartySrcDir = $cwd.'/'.$this->firstPartysrc;
+        $this->thridPartySrcDir = $cwd.'/'.$this->thirdPartySrc;
+        $this->destDir = $cwd.'/'.$this->dest;
+
+        $this->validateFirstPartyPaths();
     }
 
-    private function mapLocations(array $extra): void
+    private function validateFirstPartyPaths(): void
     {
-        if (!isset($extra['agilo-wp-package-installer-paths'])) {
-            throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer-paths is missing.');
-        }
-
-        if (!is_array($extra['agilo-wp-package-installer-paths'])) {
-            throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer-paths is not an array.');
-        }
-
-        $fs = new Filesystem();
-        foreach ($extra['agilo-wp-package-installer-paths'] as $from_path => $to_path) {
-            if (!is_string($from_path)) {
-                throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer-paths key is not a string.');
+        foreach ($this->firstPartySrcPaths as $path) {
+            if (!is_string($path)) {
+                throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer-first-party-paths value is not a string.');
             }
-
-            // strip trailing slashes
-            $from_path = rtrim($from_path, '/\\');
-
-            if ($from_path === '') {
-                throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer-paths key is empty.');
+            if ($path === '') {
+                throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer-first-party-paths value is empty.');
             }
-            if (!is_string($to_path)) {
-                throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer-paths value is not a string.');
-            }
-
-            // strip trailing slashes
-            $to_path = rtrim($to_path, '/\\');
-
-            if ($to_path === '') {
-                throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer-paths value is empty.');
-            }
-            $fs->ensureDirectoryExists($to_path);
-            $this->locations[$from_path] = $to_path;
         }
     }
 
@@ -145,20 +169,72 @@ class Plugin implements PluginInterface, EventSubscriberInterface
         }
 
         $fs = new Filesystem();
-        foreach ($this->locations as $from_path => $to_path) {
-            try {
-                $it = new FilesystemIterator($from_path, FilesystemIterator::SKIP_DOTS);
-                foreach ($it as $fileinfo) {
-                    $target = realpath($to_path).'/'.$fileinfo->getFilename();
-                    self::remove($fs, $target);
-                    if ($this->symlinkedBuild) {
-                        $fs->relativeSymlink($fileinfo->getRealPath(), $target);
-                    } else {
-                        $fs->copy($fileinfo->getRealPath(), $target);
-                    }
-                }
-            } catch (Throwable $t) {
-                // FilesystemIterator can throw
+
+        /**
+         * Handle thrid party packages.
+         */
+
+        $finder = new Finder();
+        $finder->in($this->thridPartySrcDir);
+
+        foreach ($this->thirdPartySrcPaths as $path) {
+            if (substr($path, 0, 1) === '!') {
+                $finder->notPath(Glob::toRegex(substr($path, 1)));
+            } else {
+                $finder->path(Glob::toRegex($path));
+            }
+        }
+
+        foreach($finder as $fileinfo) {
+            $srcPath = $fileinfo->getRealPath();
+            if ($srcPath === false) {
+                throw new RuntimeException('getRealPath() failed.');
+            }
+
+            $destPath = str_replace($this->thridPartySrcDir, $this->destDir, $srcPath);
+
+            $fs->ensureDirectoryExists(dirname($destPath));
+
+            if ($this->symlinkedBuild) {
+                $fs->relativeSymlink($srcPath, $destPath);
+                echo 'Symlinked '.$srcPath.' to '.$destPath.PHP_EOL;
+            } else {
+                $fs->copy($srcPath, $destPath);
+                echo 'Copied '.$srcPath.' to '.$destPath.PHP_EOL;
+            }
+        }
+
+        /**
+         * Handle first party packages.
+         */
+
+        $finder = new Finder();
+        $finder->in($this->firstPartySrcDir);
+
+        foreach ($this->firstPartySrcPaths as $path) {
+            if (substr($path, 0, 1) === '!') {
+                $finder->notPath(Glob::toRegex(substr($path, 1)));
+            } else {
+                $finder->path(Glob::toRegex($path));
+            }
+        }
+
+        foreach($finder as $fileinfo) {
+            $srcPath = $fileinfo->getRealPath();
+            if ($srcPath === false) {
+                throw new RuntimeException('getRealPath() failed.');
+            }
+
+            $destPath = str_replace($this->firstPartySrcDir, $this->destDir, $srcPath);
+
+            $fs->ensureDirectoryExists(dirname($destPath));
+
+            if ($this->symlinkedBuild) {
+                $fs->relativeSymlink($srcPath, $destPath);
+                echo 'Symlinked '.$srcPath.' to '.$destPath.PHP_EOL;
+            } else {
+                $fs->copy($srcPath, $destPath);
+                echo 'Copied '.$srcPath.' to '.$destPath.PHP_EOL;
             }
         }
     }
