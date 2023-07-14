@@ -292,14 +292,14 @@ class Plugin implements PluginInterface, EventSubscriberInterface
         $installPath = $this->composer->getInstallationManager()->getInstallPath($package);
 
         if ($installPath) {
-            foreach ($this->locations as $from_path => $to_path) {
-                if (realpath($from_path) === dirname($installPath)) {
-                    $fs = new Filesystem();
-                    $pathToRemove = $to_path.'/'.basename($installPath);
-                    self::remove($fs, $pathToRemove);
-                    return;
-                }
-            }
+            $destPath = str_replace($this->thridPartySrcDir, $this->destDir, $installPath);
+
+            // strip trailing slashes
+            $destPath = rtrim($destPath, '/\\');
+
+            $fs = new Filesystem();
+            self::remove($fs, $destPath);
+            return;
         }
     }
 
