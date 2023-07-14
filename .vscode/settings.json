@@ -1,0 +1,4 @@
+{
+    // Don't display generic IntelliSense suggestions from the built-in PHP Language Features extension.
+    "php.suggest.basic": false,
+}
