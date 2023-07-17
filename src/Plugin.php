@@ -32,14 +32,14 @@ class Plugin implements PluginInterface, EventSubscriberInterface
      */
     private $firstPartysrc = 'src';
 
-    private $thirdPartySrc = 'bin';
+    private $thirdPartySrc = '.';
 
     /**
      * Relative path to the destination directory without trailing slash.
      * 
      * @var string
      */
-    private $dest = 'public';
+    private $dest = 'wordpress';
 
     /**
      * Absolute path to the source directory without trailing slash.
