@@ -80,23 +80,28 @@ class Plugin implements PluginInterface, EventSubscriberInterface
     /** @var Composer */
     private $composer;
 
+    /** @var IOInterface */
+    private $io;
+
     /** @var Filesystem */
     private $fs;
 
     public function activate(Composer $composer, IOInterface $io)
     {
+        $this->composer = $composer;
+        $this->io = $io;
+
         if (getenv('AGILO_WP_PACKAGE_INSTALLER_DEBUG') === '1') {
             $this->debug = true;
         }
 
         if ($this->debug) {
-            echo __CLASS__.'::activate'.PHP_EOL;
+            $this->io->write(__CLASS__.'::activate');
             if (function_exists('xdebug_break')) {
                 xdebug_break();
             }
         }
 
-        $this->composer = $composer;
         $this->fs = new Filesystem();
         $extra = $this->composer->getPackage()->getExtra();
         $settings = $extra['agilo-wp-package-installer'] ?? [];
@@ -178,14 +183,14 @@ class Plugin implements PluginInterface, EventSubscriberInterface
     public function deactivate(Composer $composer, IOInterface $io)
     {
         if ($this->debug) {
-            echo __CLASS__.'::deactivated'.PHP_EOL;
+            $this->io->write(__CLASS__.'::deactivated');
         }
     }
 
     public function uninstall(Composer $composer, IOInterface $io)
     {
         if ($this->debug) {
-            echo __CLASS__.'::uninstall'.PHP_EOL;
+            $this->io->write(__CLASS__.'::uninstall');
         }
     }
 
@@ -201,7 +206,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
     public function onPostUpdateCmd(Event $event): void
     {
         if ($this->debug) {
-            echo __CLASS__.'::onPostUpdateCmd'.PHP_EOL;
+            $this->io->write(__CLASS__.'::onPostUpdateCmd');
             if (function_exists('xdebug_break')) {
                 xdebug_break();
             }
@@ -271,10 +276,10 @@ class Plugin implements PluginInterface, EventSubscriberInterface
 
                 if ($this->symlinkedBuild) {
                     $this->fs->relativeSymlink($srcPath, $destPath);
-                    echo 'Symlinked '.$srcPath.' to '.$destPath.PHP_EOL;
+                    $this->io->write('Symlinked '.$srcPath.' to '.$destPath);
                 } else {
                     $this->fs->copy($srcPath, $destPath);
-                    echo 'Copied '.$srcPath.' to '.$destPath.PHP_EOL;
+                    $this->io->write('Copied '.$srcPath.' to '.$destPath);
                 }
             }
         }
@@ -283,7 +288,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
     public function onPostPackageUninstall(PackageEvent $event): void
     {
         if ($this->debug) {
-            echo __CLASS__.'::onPostPackageUninstall'.PHP_EOL;
+            $this->io->write(__CLASS__.'::onPostPackageUninstall');
             if (function_exists('xdebug_break')) {
                 xdebug_break();
             }
