@@ -26,12 +26,17 @@ class Plugin implements PluginInterface, EventSubscriberInterface
     private $symlinkedBuild = true;
 
     /**
-     * Relative path to the source directory without trailing slash.
+     * Relative path to the first party source directory without trailing slash.
      * 
      * @var string
      */
     private $firstPartysrc = 'src';
 
+    /**
+     * Relative path to the third party source directory without trailing slash.
+     * 
+     * @var string
+     */
     private $thirdPartySrc = '.';
 
     /**
@@ -42,12 +47,17 @@ class Plugin implements PluginInterface, EventSubscriberInterface
     private $dest = 'wordpress';
 
     /**
-     * Absolute path to the source directory without trailing slash.
+     * Absolute path to the first party source directory without trailing slash.
      * 
      * @var string
      */
     private $firstPartySrcDir;
 
+    /**
+     * Absolute path to the third party source directory without trailing slash.
+     * 
+     * @var string
+     */
     private $thridPartySrcDir;
 
     /**
