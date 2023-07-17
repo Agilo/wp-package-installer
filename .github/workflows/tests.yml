@@ -1,0 +1,31 @@
+name: Tests
+
+on:
+  pull_request: ~
+  push:
+
+jobs:
+  tests:
+    name: "Tests"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        operating-system: ['ubuntu-latest']
+        php-version: ['7.2', '8.0']
+        composer-version: ['v1', 'v2']
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          coverage: none
+          tools: composer:${{ matrix.composer-version }}
+
+      - name: Install test dependencies
+        run: composer install --no-progress --no-suggest --working-dir=tools/phpunit
+
+      - name: Run PHPUnit
+        run: ./tools/phpunit/vendor/bin/phpunit tools/phpunit/tests/TestBuild.php
