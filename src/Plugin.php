@@ -80,6 +80,9 @@ class Plugin implements PluginInterface, EventSubscriberInterface
     /** @var Composer */
     private $composer;
 
+    /** @var Filesystem */
+    private $fs;
+
     public function activate(Composer $composer, IOInterface $io)
     {
         if (getenv('AGILO_WP_PACKAGE_INSTALLER_DEBUG') === '1') {
@@ -94,6 +97,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
         }
 
         $this->composer = $composer;
+        $this->fs = new Filesystem();
         $extra = $this->composer->getPackage()->getExtra();
         $settings = $extra['agilo-wp-package-installer'] ?? [];
 
@@ -152,9 +156,9 @@ class Plugin implements PluginInterface, EventSubscriberInterface
 
         // TODO: Allow setting $this->firstPartysrc, $this->thirdPartySrc and $this->dest from config.
 
-        $this->firstPartySrcDir = $cwd.'/'.$this->firstPartysrc;
-        $this->thridPartySrcDir = $cwd.'/'.$this->thirdPartySrc;
-        $this->destDir = $cwd.'/'.$this->dest;
+        $this->firstPartySrcDir = $this->fs->normalizePath($cwd.'/'.$this->firstPartysrc);
+        $this->thridPartySrcDir = $this->fs->normalizePath($cwd.'/'.$this->thirdPartySrc);
+        $this->destDir = $this->fs->normalizePath($cwd.'/'.$this->dest);
 
         $this->validateFirstPartyPaths();
     }
@@ -203,39 +207,39 @@ class Plugin implements PluginInterface, EventSubscriberInterface
             }
         }
 
-        $fs = new Filesystem();
-
         /**
          * Handle thrid party packages.
          */
 
-        $finder = new Finder();
-        $finder->in($this->thridPartySrcDir);
+        if (is_dir($this->thridPartySrcDir)) {
+            $finder = new Finder();
+            $finder->in($this->thridPartySrcDir);
 
-        foreach ($this->thirdPartySrcPaths as $path) {
-            if (substr($path, 0, 1) === '!') {
-                $finder->notPath(Glob::toRegex(substr($path, 1)));
-            } else {
-                $finder->path(Glob::toRegex($path));
-            }
-        }
-
-        foreach($finder as $fileinfo) {
-            $srcPath = $fileinfo->getRealPath();
-            if ($srcPath === false) {
-                throw new RuntimeException('getRealPath() failed.');
+            foreach ($this->thirdPartySrcPaths as $path) {
+                if (substr($path, 0, 1) === '!') {
+                    $finder->notPath(Glob::toRegex(substr($path, 1)));
+                } else {
+                    $finder->path(Glob::toRegex($path));
+                }
             }
 
-            $destPath = str_replace($this->thridPartySrcDir, $this->destDir, $srcPath);
+            foreach($finder as $fileinfo) {
+                $srcPath = $fileinfo->getRealPath();
+                if ($srcPath === false) {
+                    throw new RuntimeException('getRealPath() failed.');
+                }
 
-            $fs->ensureDirectoryExists(dirname($destPath));
+                $destPath = str_replace($this->thridPartySrcDir, $this->destDir, $srcPath);
 
-            if ($this->symlinkedBuild) {
-                $fs->relativeSymlink($srcPath, $destPath);
-                echo 'Symlinked '.$srcPath.' to '.$destPath.PHP_EOL;
-            } else {
-                $fs->copy($srcPath, $destPath);
-                echo 'Copied '.$srcPath.' to '.$destPath.PHP_EOL;
+                $this->fs->ensureDirectoryExists(dirname($destPath));
+
+                if ($this->symlinkedBuild) {
+                    $this->fs->relativeSymlink($srcPath, $destPath);
+                    echo 'Symlinked '.$srcPath.' to '.$destPath.PHP_EOL;
+                } else {
+                    $this->fs->copy($srcPath, $destPath);
+                    echo 'Copied '.$srcPath.' to '.$destPath.PHP_EOL;
+                }
             }
         }
 
@@ -243,33 +247,35 @@ class Plugin implements PluginInterface, EventSubscriberInterface
          * Handle first party packages.
          */
 
-        $finder = new Finder();
-        $finder->in($this->firstPartySrcDir);
+        if (is_dir($this->firstPartySrcDir)) {
+            $finder = new Finder();
+            $finder->in($this->firstPartySrcDir);
 
-        foreach ($this->firstPartySrcPaths as $path) {
-            if (substr($path, 0, 1) === '!') {
-                $finder->notPath(Glob::toRegex(substr($path, 1)));
-            } else {
-                $finder->path(Glob::toRegex($path));
-            }
-        }
-
-        foreach($finder as $fileinfo) {
-            $srcPath = $fileinfo->getRealPath();
-            if ($srcPath === false) {
-                throw new RuntimeException('getRealPath() failed.');
+            foreach ($this->firstPartySrcPaths as $path) {
+                if (substr($path, 0, 1) === '!') {
+                    $finder->notPath(Glob::toRegex(substr($path, 1)));
+                } else {
+                    $finder->path(Glob::toRegex($path));
+                }
             }
 
-            $destPath = str_replace($this->firstPartySrcDir, $this->destDir, $srcPath);
+            foreach($finder as $fileinfo) {
+                $srcPath = $fileinfo->getRealPath();
+                if ($srcPath === false) {
+                    throw new RuntimeException('getRealPath() failed.');
+                }
 
-            $fs->ensureDirectoryExists(dirname($destPath));
+                $destPath = str_replace($this->firstPartySrcDir, $this->destDir, $srcPath);
 
-            if ($this->symlinkedBuild) {
-                $fs->relativeSymlink($srcPath, $destPath);
-                echo 'Symlinked '.$srcPath.' to '.$destPath.PHP_EOL;
-            } else {
-                $fs->copy($srcPath, $destPath);
-                echo 'Copied '.$srcPath.' to '.$destPath.PHP_EOL;
+                $this->fs->ensureDirectoryExists(dirname($destPath));
+
+                if ($this->symlinkedBuild) {
+                    $this->fs->relativeSymlink($srcPath, $destPath);
+                    echo 'Symlinked '.$srcPath.' to '.$destPath.PHP_EOL;
+                } else {
+                    $this->fs->copy($srcPath, $destPath);
+                    echo 'Copied '.$srcPath.' to '.$destPath.PHP_EOL;
+                }
             }
         }
     }
@@ -297,17 +303,16 @@ class Plugin implements PluginInterface, EventSubscriberInterface
             // strip trailing slashes
             $destPath = rtrim($destPath, '/\\');
 
-            $fs = new Filesystem();
-            self::remove($fs, $destPath);
+            $this->remove($destPath);
             return;
         }
     }
 
-    private static function remove(Filesystem $fs, string $path): bool
+    private function remove(string $path): bool
     {
         if (is_link($path)) {
-            return $fs->unlink($path);
+            return $this->fs->unlink($path);
         }
-        return $fs->remove($path);
+        return $this->fs->remove($path);
     }
 }
