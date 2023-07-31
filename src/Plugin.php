@@ -62,7 +62,6 @@ class Plugin implements PluginInterface, EventSubscriberInterface
      */
     private $firstPartySrcPaths = [
         '*',
-        '!html',
         '!wp-content',
         'wp-content/plugins/*',
         'wp-content/themes/*',
