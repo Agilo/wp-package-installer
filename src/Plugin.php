@@ -61,7 +61,9 @@ class Plugin implements PluginInterface, EventSubscriberInterface
      * First party package relative paths.
      */
     private $firstPartySrcPaths = [
-        'wp-config.php',
+        '*',
+        '!html',
+        '!wp-content',
         'wp-content/plugins/*',
         'wp-content/themes/*',
         'wp-content/mu-plugins/*',
