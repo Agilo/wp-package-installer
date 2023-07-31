@@ -1,7 +1,10 @@
 <?php
 
 // get a list of all files ending with ".php" in the entire project
-$finder = PhpCsFixer\Finder::create()->ignoreDotFiles(false)->in(__DIR__);
+$finder = PhpCsFixer\Finder::create()
+    ->ignoreDotFiles(false)
+    ->in(__DIR__)
+    ->exclude('tools/phpunit/tests/fixtures');
 
 return (new PhpCsFixer\Config())->setRules([
         '@PER' => true,
