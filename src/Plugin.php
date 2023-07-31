@@ -104,11 +104,19 @@ class Plugin implements PluginInterface, EventSubscriberInterface
 
         $this->fs = new Filesystem();
         $extra = $this->composer->getPackage()->getExtra();
+
+        /**
+         * Get and validate main settings array.
+         */
         $settings = $extra['agilo-wp-package-installer'] ?? [];
 
         if (!is_array($settings)) {
             throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer value is not an array.');
         }
+
+        /**
+         * symlinked-build
+         */
 
         if (isset($settings['symlinked-build'])) {
             if (!is_bool($settings['symlinked-build'])) {
@@ -124,6 +132,10 @@ class Plugin implements PluginInterface, EventSubscriberInterface
             $this->symlinkedBuild = true;
         }
 
+        /**
+         * first-party-src
+         */
+
         if (isset($settings['first-party-src'])) {
             if (!is_string($settings['first-party-src'])) {
                 throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::first-party-src value is not a string.');
@@ -134,6 +146,10 @@ class Plugin implements PluginInterface, EventSubscriberInterface
             $this->firstPartysrc = $settings['first-party-src'];
         }
 
+        /**
+         * third-party-src
+         */
+
         if (isset($settings['third-party-src'])) {
             if (!is_string($settings['third-party-src'])) {
                 throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::third-party-src value is not a string.');
@@ -143,6 +159,10 @@ class Plugin implements PluginInterface, EventSubscriberInterface
             }
             $this->thirdPartySrc = $settings['third-party-src'];
         }
+
+        /**
+         * dest
+         */
 
         if (isset($settings['dest'])) {
             if (!is_string($settings['dest'])) {
