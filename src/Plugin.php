@@ -27,7 +27,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
 
     /**
      * Relative path to the source directory without trailing slash.
-     * 
+     *
      * @var string
      */
     private $firstPartysrc = 'src';
@@ -36,14 +36,14 @@ class Plugin implements PluginInterface, EventSubscriberInterface
 
     /**
      * Relative path to the destination directory without trailing slash.
-     * 
+     *
      * @var string
      */
     private $dest = 'wordpress';
 
     /**
      * Absolute path to the source directory without trailing slash.
-     * 
+     *
      * @var string
      */
     private $firstPartySrcDir;
@@ -52,7 +52,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
 
     /**
      * Absolute path to the destination directory without trailing slash.
-     * 
+     *
      * @var string
      */
     private $destDir;
@@ -198,7 +198,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
          * third-party-src-paths
          */
 
-         if (isset($settings['third-party-src-paths'])) {
+        if (isset($settings['third-party-src-paths'])) {
             if (!is_array($settings['third-party-src-paths'])) {
                 throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::third-party-src-paths value is not an array.');
             }
