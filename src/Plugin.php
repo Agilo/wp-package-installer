@@ -176,6 +176,44 @@ class Plugin implements PluginInterface, EventSubscriberInterface
             $this->dest = $settings['dest'];
         }
 
+        /**
+         * first-party-src-paths
+         */
+
+        if (isset($settings['first-party-src-paths'])) {
+            if (!is_array($settings['first-party-src-paths'])) {
+                throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::first-party-src-paths value is not an array.');
+            }
+            foreach ($settings['first-party-src-paths'] as $index => $path) {
+                if (!is_string($path)) {
+                    throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::first-party-src-paths['.$index.'] value is not a string.');
+                }
+                if ($path === '') {
+                    throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::first-party-src-paths['.$index.'] value is empty.');
+                }
+            }
+            $this->firstPartySrcPaths = array_merge($this->firstPartySrcPaths, $settings['first-party-src-paths']);
+        }
+
+        /**
+         * third-party-src-paths
+         */
+
+         if (isset($settings['third-party-src-paths'])) {
+            if (!is_array($settings['third-party-src-paths'])) {
+                throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::third-party-src-paths value is not an array.');
+            }
+            foreach ($settings['third-party-src-paths'] as $index => $path) {
+                if (!is_string($path)) {
+                    throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::third-party-src-paths['.$index.'] value is not a string.');
+                }
+                if ($path === '') {
+                    throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::third-party-src-paths['.$index.'] value is empty.');
+                }
+            }
+            $this->thirdPartySrcPaths = array_merge($this->thirdPartySrcPaths, $settings['third-party-src-paths']);
+        }
+
         $cwd = getcwd();
         if ($cwd === false) {
             throw new RuntimeException('getcwd() failed.');
