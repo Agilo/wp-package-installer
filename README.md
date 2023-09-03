@@ -6,6 +6,11 @@
 3. `composer require agilo/wp-package-installer`
 4. `composer require johnpbloch/wordpress`
 
+## Formatting code
+
+1. Run `composer install --working-dir=tools/php-cs-fixer`
+2. Run `./tools/php-cs-fixer/vendor/bin/php-cs-fixer fix`
+
 ## Running tests
 
 1. Run `composer install --working-dir=tools/phpunit`
