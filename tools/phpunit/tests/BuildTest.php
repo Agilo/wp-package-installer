@@ -36,6 +36,7 @@ class BuildTest extends TestCase
         $this->assertTrue(copy(TESTS_ROOT_DIR.'/tests/fixtures/'.$composerJsonFilename, TEST_PROJECT_ROOT_DIR.'/composer.json'));
 
         $process = new Process(['composer', 'install'], TEST_PROJECT_ROOT_DIR);
+        $process->setTimeout(5 * 60);
         $this->assertEquals(0, $process->run(), $process->getCommandLine().' failed with the error below.'.PHP_EOL.$process->getErrorOutput());
 
         $this->assertProjectFiles($isSymlinkedBuild, $firstPartySrc, $thirdPartySrc, $dest);
