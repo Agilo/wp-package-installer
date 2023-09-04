@@ -7,7 +7,7 @@ namespace Agilo\WpPackageInstaller\Tests;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Process\Process;
 
-class TestBuild extends TestCase
+class BuildTest extends TestCase
 {
     public function dataProvider()
     {
