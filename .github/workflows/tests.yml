@@ -24,6 +24,17 @@ jobs:
           coverage: none
           tools: composer:${{ matrix.composer-version }}
 
+      - name: Get composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-php${{ matrix.php-version }}-composer_${{ matrix.composer-version }}-${{ hashFiles('**/composer.json') }}
+          restore-keys: ${{ runner.os }}-composer-
+
       - name: Install test dependencies
         run: composer install --no-progress --no-suggest --working-dir=tools/phpunit
 
