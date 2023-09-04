@@ -45,6 +45,7 @@ class BuildTest extends TestCase
          * test updating WP core
          */
         $process = new Process(['composer', 'require', '--update-with-dependencies', 'johnpbloch/wordpress:6.2.2'], TEST_PROJECT_ROOT_DIR);
+        $process->setTimeout(5 * 60);
         $this->assertEquals(0, $process->run(), $process->getCommandLine().' failed with the error below.'.PHP_EOL.$process->getErrorOutput());
 
         $this->assertProjectFiles($isSymlinkedBuild, $firstPartySrc, $thirdPartySrc, $dest);
@@ -55,6 +56,7 @@ class BuildTest extends TestCase
 
         // update wpackagist-plugin/wp-crontrol 1.14 => 1.15
         $process = new Process(['composer', 'require', 'wpackagist-plugin/wp-crontrol:1.15'], TEST_PROJECT_ROOT_DIR);
+        $process->setTimeout(5 * 60);
         $this->assertEquals(0, $process->run(), $process->getCommandLine().' failed with the error below.'.PHP_EOL.$process->getErrorOutput());
 
         $this->assertProjectFiles($isSymlinkedBuild, $firstPartySrc, $thirdPartySrc, $dest);
@@ -64,6 +66,7 @@ class BuildTest extends TestCase
          */
 
         $process = new Process(['composer', 'require', 'wpackagist-plugin/duplicate-post'], TEST_PROJECT_ROOT_DIR);
+        $process->setTimeout(5 * 60);
         $this->assertEquals(0, $process->run(), $process->getCommandLine().' failed with the error below.'.PHP_EOL.$process->getErrorOutput());
 
         // check that the plugin installed successfully
@@ -81,6 +84,7 @@ class BuildTest extends TestCase
          */
 
         $process = new Process(['composer', 'remove', 'wpackagist-plugin/duplicate-post'], TEST_PROJECT_ROOT_DIR);
+        $process->setTimeout(5 * 60);
         $this->assertEquals(0, $process->run(), $process->getCommandLine().' failed with the error below.'.PHP_EOL.$process->getErrorOutput());
 
         // check that the plugin was deleted successfully
