@@ -28,4 +28,4 @@ jobs:
         run: composer install --no-progress --no-suggest --working-dir=tools/phpunit
 
       - name: Run PHPUnit
-        run: ./tools/phpunit/vendor/bin/phpunit tools/phpunit/tests/TestBuild.php
+        run: ./tools/phpunit/vendor/bin/phpunit
