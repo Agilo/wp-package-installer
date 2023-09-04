@@ -7,12 +7,12 @@ on:
 jobs:
   tests:
     name: "Tests"
-    runs-on: ubuntu-latest
     strategy:
       matrix:
-        operating-system: ["ubuntu-latest", macos-latest, windows-latest]
+        os: ["ubuntu-latest", macos-latest, windows-latest]
         php-version: ["7.2", "8.0", "8.1", "8.2", "8.3"]
         composer-version: ["v1", "v2"]
+    runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v3
@@ -32,7 +32,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
-          key: ${{ runner.os }}-php${{ matrix.php-version }}-composer_${{ matrix.composer-version }}-${{ hashFiles('**/composer.json') }}
+          key: ${{ matrix.os }}-php${{ matrix.php-version }}-composer_${{ matrix.composer-version }}-${{ hashFiles('**/composer.json') }}
           restore-keys: ${{ runner.os }}-composer-
 
       - name: Install test dependencies
