@@ -1,6 +1,7 @@
 {
     "name": "agilo/wp-package-installer",
     "type": "composer-plugin",
+    "license": "MIT",
     "config": {
         "sort-packages": true
     },
