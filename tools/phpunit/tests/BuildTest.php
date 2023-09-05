@@ -17,28 +17,32 @@ class BuildTest extends TestCase
         ];
     }
 
+    private function setupProject(string $composerJsonFilename): void
+    {
+        /**
+         * setup the project
+         */
+
+         (new Process(['rm', '-rf', TEST_PROJECT_ROOT_DIR]))->run();
+         (new Process(['cp', '-R', TESTS_ROOT_DIR.'/tests/fixtures/test-project', TEST_PROJECT_ROOT_DIR]))->run();
+         (new Process(['cp', '-R', PROJECT_ROOT_DIR, TEST_PROJECT_ROOT_DIR.'/wp-package-installer']))->run();
+         $this->assertTrue(copy(TESTS_ROOT_DIR.'/tests/fixtures/'.$composerJsonFilename, TEST_PROJECT_ROOT_DIR.'/composer.json'));
+ 
+         $process = new Process(['composer', 'install'], TEST_PROJECT_ROOT_DIR);
+         $process->setTimeout(5 * 60);
+         $this->assertEquals(0, $process->run(), $process->getCommandLine().' failed with the error below.'.PHP_EOL.$process->getErrorOutput());
+    }
+
     /**
      * @dataProvider dataProvider
      */
-    public function test(bool $isSymlinkedBuild, string $composerJsonFilename): void
+    public function testVanillaBuild(bool $isSymlinkedBuild, string $composerJsonFilename): void
     {
         $firstPartySrc = TEST_PROJECT_ROOT_DIR.'/src';
         $thirdPartySrc = TEST_PROJECT_ROOT_DIR.'/vendor';
         $dest = TEST_PROJECT_ROOT_DIR.'/public';
 
-        /**
-         * setup the project
-         */
-
-        (new Process(['rm', '-rf', TEST_PROJECT_ROOT_DIR]))->run();
-        (new Process(['cp', '-R', TESTS_ROOT_DIR.'/tests/fixtures/test-project', TEST_PROJECT_ROOT_DIR]))->run();
-        (new Process(['cp', '-R', PROJECT_ROOT_DIR, TEST_PROJECT_ROOT_DIR.'/wp-package-installer']))->run();
-        $this->assertTrue(copy(TESTS_ROOT_DIR.'/tests/fixtures/'.$composerJsonFilename, TEST_PROJECT_ROOT_DIR.'/composer.json'));
-
-        $process = new Process(['composer', 'install'], TEST_PROJECT_ROOT_DIR);
-        $process->setTimeout(5 * 60);
-        $this->assertEquals(0, $process->run(), $process->getCommandLine().' failed with the error below.'.PHP_EOL.$process->getErrorOutput());
-
+        $this->setupProject($composerJsonFilename);
         $this->assertProjectFiles($isSymlinkedBuild, $firstPartySrc, $thirdPartySrc, $dest);
 
         /**
@@ -105,6 +109,30 @@ class BuildTest extends TestCase
         $this->assertFileEquals($firstPartySrc.'/wp-config.php', $dest.'/wp-config.php');
 
         /**
+         * test 1st party custom folders
+         */
+        $isLink = is_link($dest.'/html');
+        $this->assertSame($isLink, $isSymlinkedBuild);
+
+        $this->assertFileExists($dest.'/html/index.php');
+        $this->assertFileEquals($firstPartySrc.'/html/index.php', $dest.'/html/index.php');
+
+        // test dot file
+        $this->assertFileExists($dest.'/html/.browserslistrc');
+        $this->assertFileEquals($firstPartySrc.'/html/.browserslistrc', $dest.'/html/.browserslistrc');
+
+        /**
+         * test 1st party themes
+         */
+
+        $isLink = is_link($dest.'/wp-content/themes/hello-world');
+        $this->assertSame($isLink, $isSymlinkedBuild);
+        $this->assertFileExists($dest.'/wp-content/themes/hello-world/index.php');
+        $this->assertFileEquals($firstPartySrc.'/wp-content/themes/hello-world/index.php', $dest.'/wp-content/themes/hello-world/index.php');
+        $this->assertFileExists($dest.'/wp-content/themes/hello-world/style.css');
+        $this->assertFileEquals($firstPartySrc.'/wp-content/themes/hello-world/style.css', $dest.'/wp-content/themes/hello-world/style.css');
+
+        /**
          * test 1st party mu-plugins
          */
         $isLink = is_link($dest.'/wp-content/mu-plugins/agilo-mailpit.php');
@@ -144,5 +172,27 @@ class BuildTest extends TestCase
         $this->assertDirectoryExists($dest.'/wp-content/plugins/redirection');
         CustomAsserts::assertDirectoryNotEmpty($dest.'/wp-content/plugins/redirection');
         $this->assertFileEquals($thirdPartySrc.'/wp-content/plugins/redirection/redirection.php', $dest.'/wp-content/plugins/redirection/redirection.php');
+    }
+
+    public function testSymlinkedBuildWithCustomPaths()
+    {
+        $firstPartySrc = TEST_PROJECT_ROOT_DIR.'/src';
+        $thirdPartySrc = TEST_PROJECT_ROOT_DIR.'/vendor';
+        $dest = TEST_PROJECT_ROOT_DIR.'/public';
+
+        $this->setupProject('composer-symlinked-custom-paths.json');
+
+        $this->assertFileNotExists($dest.'/html');
+        $this->assertFileNotExists($dest.'/phpcs.xml.dist');
+
+        $this->assertFileExists($dest.'/scripts/task1.php');
+        $this->assertFileEquals($firstPartySrc.'/scripts/task1.php', $dest.'/scripts/task1.php');
+        $this->assertFileNotExists($dest.'/scripts/task2.php');
+
+        $this->assertFileNotExists($dest.'/wp-content/plugins/query-monitor');
+
+        $this->assertFileExists($dest.'/wp-content/plugins/wp-crontrol/wp-crontrol.php');
+        $this->assertFileEquals($thirdPartySrc.'/wp-content/plugins/wp-crontrol/wp-crontrol.php', $dest.'/wp-content/plugins/wp-crontrol/wp-crontrol.php');
+        $this->assertFileNotExists($dest.'/wp-content/plugins/wp-crontrol/readme.md');
     }
 }
