@@ -23,7 +23,10 @@ class Plugin implements PluginInterface, EventSubscriberInterface
     private $debug = false;
 
     /** @var bool */
-    private $symlinkedBuild = true;
+    private $firstPartySymlinkedBuild = true;
+
+    /** @var bool */
+    private $thirdPartySymlinkedBuild = true;
 
     /**
      * Relative path to the first party source directory without trailing slash.
@@ -126,21 +129,25 @@ class Plugin implements PluginInterface, EventSubscriberInterface
         }
 
         /**
-         * symlinked-build
+         * first-party-src-symlinked-build
          */
 
-        if (isset($settings['symlinked-build'])) {
-            if (!is_bool($settings['symlinked-build'])) {
-                throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::symlinked-build value is not a boolean.');
+        if (isset($settings['first-party-src-symlinked-build'])) {
+            if (!is_bool($settings['first-party-src-symlinked-build'])) {
+                throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::first-party-src-symlinked-build value is not a boolean.');
             }
-            $this->symlinkedBuild = $settings['symlinked-build'];
+            $this->firstPartySymlinkedBuild = $settings['first-party-src-symlinked-build'];
         }
 
-        // Allow overriding via environment variable.
-        if (getenv('AGILO_WP_PACKAGE_INSTALLER_SYMLINKED_BUILD') === '0') {
-            $this->symlinkedBuild = false;
-        } elseif (getenv('AGILO_WP_PACKAGE_INSTALLER_SYMLINKED_BUILD') === '1') {
-            $this->symlinkedBuild = true;
+        /**
+         * third-party-src-symlinked-build
+         */
+
+        if (isset($settings['third-party-src-symlinked-build'])) {
+            if (!is_bool($settings['third-party-src-symlinked-build'])) {
+                throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::third-party-src-symlinked-build value is not a boolean.');
+            }
+            $this->thirdPartySymlinkedBuild = $settings['third-party-src-symlinked-build'];
         }
 
         /**
@@ -305,7 +312,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
 
                 $this->fs->ensureDirectoryExists(dirname($destPath));
 
-                if ($this->symlinkedBuild) {
+                if ($this->thirdPartySymlinkedBuild) {
                     $this->fs->relativeSymlink($srcPath, $destPath);
                     echo 'Symlinked '.$srcPath.' to '.$destPath.PHP_EOL;
                 } else {
@@ -341,7 +348,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
 
                 $this->fs->ensureDirectoryExists(dirname($destPath));
 
-                if ($this->symlinkedBuild) {
+                if ($this->firstPartySymlinkedBuild) {
                     $this->fs->relativeSymlink($srcPath, $destPath);
                     $this->io->write('Symlinked '.$srcPath.' to '.$destPath);
                 } else {

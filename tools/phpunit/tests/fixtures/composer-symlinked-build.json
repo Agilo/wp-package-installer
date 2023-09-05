@@ -59,9 +59,10 @@
         },
         "agilo-wp-package-installer": {
             "first-party-src": "src",
+            "first-party-src-symlinked-build": true,
             "third-party-src": "vendor",
-            "dest": "public",
-            "symlinked-build": true
+            "third-party-src-symlinked-build": true,
+            "dest": "public"
         }
     }
 }
