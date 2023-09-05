@@ -228,8 +228,6 @@ class Plugin implements PluginInterface, EventSubscriberInterface
             throw new RuntimeException('getcwd() failed.');
         }
 
-        // TODO: Allow setting $this->firstPartysrc, $this->thirdPartySrc and $this->dest from config.
-
         $this->firstPartySrcDir = $this->fs->normalizePath($cwd.'/'.$this->firstPartysrc);
         $this->thridPartySrcDir = $this->fs->normalizePath($cwd.'/'.$this->thirdPartySrc);
         $this->destDir = $this->fs->normalizePath($cwd.'/'.$this->dest);
