@@ -23,14 +23,14 @@ class BuildTest extends TestCase
          * setup the project
          */
 
-         (new Process(['rm', '-rf', TEST_PROJECT_ROOT_DIR]))->run();
-         (new Process(['cp', '-R', TESTS_ROOT_DIR.'/tests/fixtures/test-project', TEST_PROJECT_ROOT_DIR]))->run();
-         (new Process(['cp', '-R', PROJECT_ROOT_DIR, TEST_PROJECT_ROOT_DIR.'/wp-package-installer']))->run();
-         $this->assertTrue(copy(TESTS_ROOT_DIR.'/tests/fixtures/'.$composerJsonFilename, TEST_PROJECT_ROOT_DIR.'/composer.json'));
- 
-         $process = new Process(['composer', 'install'], TEST_PROJECT_ROOT_DIR);
-         $process->setTimeout(5 * 60);
-         $this->assertEquals(0, $process->run(), $process->getCommandLine().' failed with the error below.'.PHP_EOL.$process->getErrorOutput());
+        (new Process(['rm', '-rf', TEST_PROJECT_ROOT_DIR]))->run();
+        (new Process(['cp', '-R', TESTS_ROOT_DIR.'/tests/fixtures/test-project', TEST_PROJECT_ROOT_DIR]))->run();
+        (new Process(['cp', '-R', PROJECT_ROOT_DIR, TEST_PROJECT_ROOT_DIR.'/wp-package-installer']))->run();
+        $this->assertTrue(copy(TESTS_ROOT_DIR.'/tests/fixtures/'.$composerJsonFilename, TEST_PROJECT_ROOT_DIR.'/composer.json'));
+
+        $process = new Process(['composer', 'install'], TEST_PROJECT_ROOT_DIR);
+        $process->setTimeout(5 * 60);
+        $this->assertEquals(0, $process->run(), $process->getCommandLine().' failed with the error below.'.PHP_EOL.$process->getErrorOutput());
     }
 
     /**

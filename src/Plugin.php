@@ -30,14 +30,14 @@ class Plugin implements PluginInterface, EventSubscriberInterface
 
     /**
      * Relative path to the first party source directory without trailing slash.
-     * 
+     *
      * @var string
      */
     private $firstPartysrc = 'src';
 
     /**
      * Relative path to the third party source directory without trailing slash.
-     * 
+     *
      * @var string
      */
     private $thirdPartySrc = '.';
@@ -51,14 +51,14 @@ class Plugin implements PluginInterface, EventSubscriberInterface
 
     /**
      * Absolute path to the first party source directory without trailing slash.
-     * 
+     *
      * @var string
      */
     private $firstPartySrcDir;
 
     /**
      * Absolute path to the third party source directory without trailing slash.
-     * 
+     *
      * @var string
      */
     private $thirdPartySrcDir;
