@@ -61,7 +61,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
      * 
      * @var string
      */
-    private $thridPartySrcDir;
+    private $thirdPartySrcDir;
 
     /**
      * Absolute path to the destination directory without trailing slash.
@@ -236,7 +236,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
         }
 
         $this->firstPartySrcDir = $this->fs->normalizePath($cwd.'/'.$this->firstPartysrc);
-        $this->thridPartySrcDir = $this->fs->normalizePath($cwd.'/'.$this->thirdPartySrc);
+        $this->thirdPartySrcDir = $this->fs->normalizePath($cwd.'/'.$this->thirdPartySrc);
         $this->destDir = $this->fs->normalizePath($cwd.'/'.$this->dest);
 
         $this->validateFirstPartyPaths();
@@ -287,12 +287,12 @@ class Plugin implements PluginInterface, EventSubscriberInterface
         }
 
         /**
-         * Handle thrid party packages.
+         * Handle third party packages.
          */
 
-        if (is_dir($this->thridPartySrcDir)) {
+        if (is_dir($this->thirdPartySrcDir)) {
             $finder = new Finder();
-            $finder->in($this->thridPartySrcDir);
+            $finder->in($this->thirdPartySrcDir);
 
             foreach ($this->thirdPartySrcPaths as $path) {
                 if (substr($path, 0, 1) === '!') {
@@ -308,7 +308,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
                     throw new RuntimeException('getRealPath() failed.');
                 }
 
-                $destPath = str_replace($this->thridPartySrcDir, $this->destDir, $srcPath);
+                $destPath = str_replace($this->thirdPartySrcDir, $this->destDir, $srcPath);
 
                 $this->fs->ensureDirectoryExists(dirname($destPath));
 
@@ -377,7 +377,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
         $installPath = $this->composer->getInstallationManager()->getInstallPath($package);
 
         if ($installPath) {
-            $destPath = str_replace($this->thridPartySrcDir, $this->destDir, $installPath);
+            $destPath = str_replace($this->thirdPartySrcDir, $this->destDir, $installPath);
 
             // strip trailing slashes
             $destPath = rtrim($destPath, '/\\');
