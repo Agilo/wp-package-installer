@@ -238,20 +238,6 @@ class Plugin implements PluginInterface, EventSubscriberInterface
         $this->firstPartySrcDir = $this->fs->normalizePath($cwd.'/'.$this->firstPartysrc);
         $this->thirdPartySrcDir = $this->fs->normalizePath($cwd.'/'.$this->thirdPartySrc);
         $this->destDir = $this->fs->normalizePath($cwd.'/'.$this->dest);
-
-        $this->validateFirstPartyPaths();
-    }
-
-    private function validateFirstPartyPaths(): void
-    {
-        foreach ($this->firstPartySrcPaths as $path) {
-            if (!is_string($path)) {
-                throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer-first-party-paths value is not a string.');
-            }
-            if ($path === '') {
-                throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer-first-party-paths value is empty.');
-            }
-        }
     }
 
     public function deactivate(Composer $composer, IOInterface $io)
