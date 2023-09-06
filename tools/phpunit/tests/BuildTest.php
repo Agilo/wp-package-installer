@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Agilo\WpPackageInstaller\Tests;
 
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Process\Process;
 
 class BuildTest extends TestCase
@@ -23,14 +24,22 @@ class BuildTest extends TestCase
          * setup the project
          */
 
-        $process = new Process(['rm', '-rf', TEST_PROJECT_ROOT_DIR]);
-        $this->assertSame(0, $process->run());
+        $filesystem = new Filesystem();
 
-        $process = new Process(['cp', '-R', TESTS_ROOT_DIR.'/tests/fixtures/test-project', TEST_PROJECT_ROOT_DIR]);
-        $this->assertSame(0, $process->run());
+        // remove tmp dir if it exists from the last run
+        $filesystem->remove(TEST_PROJECT_ROOT_DIR);
+        $this->assertFileNotExists(TEST_PROJECT_ROOT_DIR);
+        $this->assertDirectoryNotExists(TEST_PROJECT_ROOT_DIR);
 
-        $process = new Process(['cp', '-R', PROJECT_ROOT_DIR, TEST_PROJECT_ROOT_DIR.'/wp-package-installer']);
-        $this->assertSame(0, $process->run());
+        // copy the test project fixture to a tmp dir
+        $filesystem->mirror(TESTS_ROOT_DIR.'/tests/fixtures/test-project', TEST_PROJECT_ROOT_DIR);
+        $this->assertDirectoryExists(TEST_PROJECT_ROOT_DIR);
+        $this->assertFileExists(TEST_PROJECT_ROOT_DIR.'/src/wp-config.php');
+
+        // copy the wp-package-installer package to the tmp dir
+        $filesystem->mirror(PROJECT_ROOT_DIR, TEST_PROJECT_ROOT_DIR.'/wp-package-installer');
+        $this->assertDirectoryExists(TEST_PROJECT_ROOT_DIR.'/wp-package-installer');
+        $this->assertFileExists(TEST_PROJECT_ROOT_DIR.'/wp-package-installer/composer.json');
 
         $this->assertTrue(copy(TESTS_ROOT_DIR.'/tests/fixtures/'.$composerJsonFilename, TEST_PROJECT_ROOT_DIR.'/composer.json'));
 
