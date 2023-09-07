@@ -293,7 +293,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
                 if ($srcPath === false) {
                     throw new RuntimeException('getRealPath() failed.');
                 }
-
+                $srcPath = $this->fs->normalizePath($srcPath);
                 $destPath = str_replace($this->thirdPartySrcDir, $this->destDir, $srcPath);
 
                 $this->fs->ensureDirectoryExists(dirname($destPath));
@@ -329,7 +329,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
                 if ($srcPath === false) {
                     throw new RuntimeException('getRealPath() failed.');
                 }
-
+                $srcPath = $this->fs->normalizePath($srcPath);
                 $destPath = str_replace($this->firstPartySrcDir, $this->destDir, $srcPath);
 
                 $this->fs->ensureDirectoryExists(dirname($destPath));
