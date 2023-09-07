@@ -61,6 +61,9 @@ class BuildTest extends TestCase
         $this->assertFileExists($dest.'/html/.browserslistrc');
         $this->assertFileEquals($firstPartySrc.'/html/.browserslistrc', $dest.'/html/.browserslistrc');
 
+        $this->assertFileExists($dest.'/html/inc/functions.php');
+        $this->assertFileEquals($firstPartySrc.'/html/inc/functions.php', $dest.'/html/inc/functions.php');
+
         /**
          * test 1st party themes
          */
