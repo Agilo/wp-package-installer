@@ -1,5 +1,5 @@
 {
-    "name": "agilo/wp-package-installer-test",
+    "name": "agilo/wp-package-installer-tests",
     "description": "Project to test agilo/wp-package-installer",
     "authors": [
         {
@@ -59,9 +59,9 @@
         },
         "agilo-wp-package-installer": {
             "first-party-src": "src",
-            "first-party-src-symlinked-build": false,
+            "first-party-symlinked-build": true,
             "third-party-src": "vendor",
-            "third-party-src-symlinked-build": false,
+            "third-party-symlinked-build": true,
             "dest": "public"
         }
     }

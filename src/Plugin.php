@@ -73,7 +73,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
     /**
      * First party package relative paths.
      */
-    private $firstPartySrcPaths = [
+    private $firstPartyPaths = [
         '*',
         '!wp-content',
         'wp-content/plugins/*',
@@ -83,7 +83,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
         'wp-content/*.php',
     ];
 
-    private $thirdPartySrcPaths = [
+    private $thirdPartyPaths = [
         'wp-content/plugins/*',
         'wp-content/themes/*',
         'wp-content/mu-plugins/*',
@@ -129,25 +129,25 @@ class Plugin implements PluginInterface, EventSubscriberInterface
         }
 
         /**
-         * first-party-src-symlinked-build
+         * first-party-symlinked-build
          */
 
-        if (isset($settings['first-party-src-symlinked-build'])) {
-            if (!is_bool($settings['first-party-src-symlinked-build'])) {
-                throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::first-party-src-symlinked-build value is not a boolean.');
+        if (isset($settings['first-party-symlinked-build'])) {
+            if (!is_bool($settings['first-party-symlinked-build'])) {
+                throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::first-party-symlinked-build value is not a boolean.');
             }
-            $this->firstPartySymlinkedBuild = $settings['first-party-src-symlinked-build'];
+            $this->firstPartySymlinkedBuild = $settings['first-party-symlinked-build'];
         }
 
         /**
-         * third-party-src-symlinked-build
+         * third-party-symlinked-build
          */
 
-        if (isset($settings['third-party-src-symlinked-build'])) {
-            if (!is_bool($settings['third-party-src-symlinked-build'])) {
-                throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::third-party-src-symlinked-build value is not a boolean.');
+        if (isset($settings['third-party-symlinked-build'])) {
+            if (!is_bool($settings['third-party-symlinked-build'])) {
+                throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::third-party-symlinked-build value is not a boolean.');
             }
-            $this->thirdPartySymlinkedBuild = $settings['third-party-src-symlinked-build'];
+            $this->thirdPartySymlinkedBuild = $settings['third-party-symlinked-build'];
         }
 
         /**
@@ -193,41 +193,41 @@ class Plugin implements PluginInterface, EventSubscriberInterface
         }
 
         /**
-         * first-party-src-paths
+         * first-party-paths
          */
 
-        if (isset($settings['first-party-src-paths'])) {
-            if (!is_array($settings['first-party-src-paths'])) {
-                throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::first-party-src-paths value is not an array.');
+        if (isset($settings['first-party-paths'])) {
+            if (!is_array($settings['first-party-paths'])) {
+                throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::first-party-paths value is not an array.');
             }
-            foreach ($settings['first-party-src-paths'] as $index => $path) {
+            foreach ($settings['first-party-paths'] as $index => $path) {
                 if (!is_string($path)) {
-                    throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::first-party-src-paths['.$index.'] value is not a string.');
+                    throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::first-party-paths['.$index.'] value is not a string.');
                 }
                 if ($path === '') {
-                    throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::first-party-src-paths['.$index.'] value is empty.');
+                    throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::first-party-paths['.$index.'] value is empty.');
                 }
             }
-            $this->firstPartySrcPaths = array_merge($this->firstPartySrcPaths, $settings['first-party-src-paths']);
+            $this->firstPartyPaths = array_merge($this->firstPartyPaths, $settings['first-party-paths']);
         }
 
         /**
-         * third-party-src-paths
+         * third-party-paths
          */
 
-        if (isset($settings['third-party-src-paths'])) {
-            if (!is_array($settings['third-party-src-paths'])) {
-                throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::third-party-src-paths value is not an array.');
+        if (isset($settings['third-party-paths'])) {
+            if (!is_array($settings['third-party-paths'])) {
+                throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::third-party-paths value is not an array.');
             }
-            foreach ($settings['third-party-src-paths'] as $index => $path) {
+            foreach ($settings['third-party-paths'] as $index => $path) {
                 if (!is_string($path)) {
-                    throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::third-party-src-paths['.$index.'] value is not a string.');
+                    throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::third-party-paths['.$index.'] value is not a string.');
                 }
                 if ($path === '') {
-                    throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::third-party-src-paths['.$index.'] value is empty.');
+                    throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::third-party-paths['.$index.'] value is empty.');
                 }
             }
-            $this->thirdPartySrcPaths = array_merge($this->thirdPartySrcPaths, $settings['third-party-src-paths']);
+            $this->thirdPartyPaths = array_merge($this->thirdPartyPaths, $settings['third-party-paths']);
         }
 
         $cwd = getcwd();
@@ -280,7 +280,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
             $finder = new Finder();
             $finder->in($this->thirdPartySrcDir);
 
-            foreach ($this->thirdPartySrcPaths as $path) {
+            foreach ($this->thirdPartyPaths as $path) {
                 if (substr($path, 0, 1) === '!') {
                     $finder->notPath(Glob::toRegex(substr($path, 1)));
                 } else {
@@ -316,7 +316,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
             $finder = new Finder();
             $finder->in($this->firstPartySrcDir);
 
-            foreach ($this->firstPartySrcPaths as $path) {
+            foreach ($this->firstPartyPaths as $path) {
                 if (substr($path, 0, 1) === '!') {
                     $finder->notPath(Glob::toRegex(substr($path, 1)));
                 } else {
