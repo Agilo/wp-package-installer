@@ -117,7 +117,7 @@ class BuildTest extends TestCase
         $this->assertFileEquals($thirdPartySrc.'/wp-content/plugins/redirection/redirection.php', $dest.'/wp-content/plugins/redirection/redirection.php');
     }
 
-    public function vanillaBuildDataProvider()
+    public function vanillaBuildDataProvider(): array
     {
         return [
             [true, 'composer-symlinked-vanilla.json'],
@@ -128,7 +128,7 @@ class BuildTest extends TestCase
     /**
      * @dataProvider vanillaBuildDataProvider
      */
-    public function testVanillaBuild(bool $isSymlinkedBuild, string $composerJsonFilename)
+    public function testVanillaBuild(bool $isSymlinkedBuild, string $composerJsonFilename): void
     {
         if ($isSymlinkedBuild && DIRECTORY_SEPARATOR === '\\') {
             $this->markTestSkipped('Symlinked builds are not supported on Windows');
@@ -142,7 +142,7 @@ class BuildTest extends TestCase
         $this->assertProjectFiles($isSymlinkedBuild, $firstPartySrc, $thirdPartySrc, $dest);
     }
 
-    public function usualComposerActionsDataProvider()
+    public function usualComposerActionsDataProvider(): array
     {
         return [
             [true, 'composer-symlinked-actions.json'],
