@@ -221,9 +221,20 @@ class BuildTest extends TestCase
         $this->assertProjectFiles($isSymlinkedBuild, $firstPartySrc, $thirdPartySrc, $dest);
     }
 
-    public function testSymlinkedBuildWithCustomPaths()
+    public function buildWithCustomPathsDataProvider(): array
     {
-        if (DIRECTORY_SEPARATOR === '\\') {
+        return [
+            [true, 'composer-symlinked-custom-paths.json'],
+            [false, 'composer-non-symlinked-custom-paths.json'],
+        ];
+    }
+
+    /**
+     * @dataProvider buildWithCustomPathsDataProvider
+     */
+    public function testBuildWithCustomPaths(bool $isSymlinkedBuild, string $composerJsonFilename): void
+    {
+        if ($isSymlinkedBuild && DIRECTORY_SEPARATOR === '\\') {
             $this->markTestSkipped('Symlinked builds are not supported on Windows');
         }
 
@@ -231,29 +242,7 @@ class BuildTest extends TestCase
         $thirdPartySrc = TEST_PROJECT_ROOT_DIR.'/vendor';
         $dest = TEST_PROJECT_ROOT_DIR.'/public';
 
-        $this->setupProject('composer-symlinked-custom-paths.json');
-
-        $this->assertFileNotExists($dest.'/html');
-        $this->assertFileNotExists($dest.'/phpcs.xml.dist');
-
-        $this->assertFileExists($dest.'/scripts/task1.php');
-        $this->assertFileEquals($firstPartySrc.'/scripts/task1.php', $dest.'/scripts/task1.php');
-        $this->assertFileNotExists($dest.'/scripts/task2.php');
-
-        $this->assertFileNotExists($dest.'/wp-content/plugins/query-monitor');
-
-        $this->assertFileExists($dest.'/wp-content/plugins/wp-crontrol/wp-crontrol.php');
-        $this->assertFileEquals($thirdPartySrc.'/wp-content/plugins/wp-crontrol/wp-crontrol.php', $dest.'/wp-content/plugins/wp-crontrol/wp-crontrol.php');
-        $this->assertFileNotExists($dest.'/wp-content/plugins/wp-crontrol/readme.md');
-    }
-
-    public function testNonSymlinkedBuildWithCustomPaths()
-    {
-        $firstPartySrc = TEST_PROJECT_ROOT_DIR.'/src';
-        $thirdPartySrc = TEST_PROJECT_ROOT_DIR.'/vendor';
-        $dest = TEST_PROJECT_ROOT_DIR.'/public';
-
-        $this->setupProject('composer-non-symlinked-custom-paths.json');
+        $this->setupProject($composerJsonFilename);
 
         $this->assertFileNotExists($dest.'/html');
         $this->assertFileNotExists($dest.'/phpcs.xml.dist');
