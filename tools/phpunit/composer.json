@@ -1,12 +1,4 @@
 {
-    "name": "agilo/wp-package-installer-test",
-    "type": "project",
-    "authors": [
-        {
-            "name": "Ivo Limić",
-            "email": "ivo@agilo.co"
-        }
-    ],
     "require": {
         "php": "^7.2 || ^8.0",
         "phpunit/phpunit": "^8",
