@@ -53,6 +53,10 @@ class BuildTest extends TestCase
      */
     public function testVanillaBuild(bool $isSymlinkedBuild, string $composerJsonFilename): void
     {
+        if ($isSymlinkedBuild && DIRECTORY_SEPARATOR === '\\') {
+            $this->markTestSkipped('Symlinked builds are not supported on Windows');
+        }
+
         $firstPartySrc = TEST_PROJECT_ROOT_DIR.'/src';
         $thirdPartySrc = TEST_PROJECT_ROOT_DIR.'/vendor';
         $dest = TEST_PROJECT_ROOT_DIR.'/public';
@@ -191,6 +195,10 @@ class BuildTest extends TestCase
 
     public function testSymlinkedBuildWithCustomPaths()
     {
+        if (DIRECTORY_SEPARATOR === '\\') {
+            $this->markTestSkipped('Symlinked builds are not supported on Windows');
+        }
+
         $firstPartySrc = TEST_PROJECT_ROOT_DIR.'/src';
         $thirdPartySrc = TEST_PROJECT_ROOT_DIR.'/vendor';
         $dest = TEST_PROJECT_ROOT_DIR.'/public';
