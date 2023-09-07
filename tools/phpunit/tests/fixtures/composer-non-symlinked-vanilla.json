@@ -51,8 +51,12 @@
   },
   "extra": {
     "agilo-wp-package-installer": {
-      "first-party-symlinked-build": false,
-      "third-party-symlinked-build": false
+      "first-party": {
+        "symlink": false
+      },
+      "third-party": {
+        "symlink": false
+      }
     }
   }
 }

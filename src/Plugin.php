@@ -22,6 +22,9 @@ class Plugin implements PluginInterface, EventSubscriberInterface
     /** @var bool */
     private $debug = false;
 
+    /** @var string|null */
+    private $context = null;
+
     /** @var bool */
     private $firstPartySymlinkedBuild = true;
 
@@ -110,10 +113,15 @@ class Plugin implements PluginInterface, EventSubscriberInterface
         }
 
         if ($this->debug) {
-            $this->io->write(__CLASS__.'::activate');
+            $this->io->write(__CLASS__ . '::activate');
             if (function_exists('xdebug_break')) {
                 xdebug_break();
             }
+        }
+
+        $context = getenv('AGILO_WP_PACKAGE_INSTALLER_CONTEXT');
+        if (is_string($context) && $context !== '') {
+            $this->context = $context;
         }
 
         $this->fs = new Filesystem();
@@ -125,58 +133,11 @@ class Plugin implements PluginInterface, EventSubscriberInterface
         $settings = $extra['agilo-wp-package-installer'] ?? [];
 
         if (!is_array($settings)) {
-            throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer value is not an array.');
+            throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer is not an array.');
         }
 
-        /**
-         * first-party-symlinked-build
-         */
-
-        if (isset($settings['first-party-symlinked-build'])) {
-            if (!is_bool($settings['first-party-symlinked-build'])) {
-                throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::first-party-symlinked-build value is not a boolean.');
-            }
-            $this->firstPartySymlinkedBuild = $settings['first-party-symlinked-build'];
-        }
-
-        /**
-         * third-party-symlinked-build
-         */
-
-        if (isset($settings['third-party-symlinked-build'])) {
-            if (!is_bool($settings['third-party-symlinked-build'])) {
-                throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::third-party-symlinked-build value is not a boolean.');
-            }
-            $this->thirdPartySymlinkedBuild = $settings['third-party-symlinked-build'];
-        }
-
-        /**
-         * first-party-src
-         */
-
-        if (isset($settings['first-party-src'])) {
-            if (!is_string($settings['first-party-src'])) {
-                throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::first-party-src value is not a string.');
-            }
-            if ($settings['first-party-src'] === '') {
-                throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::first-party-src value is empty.');
-            }
-            $this->firstPartysrc = $settings['first-party-src'];
-        }
-
-        /**
-         * third-party-src
-         */
-
-        if (isset($settings['third-party-src'])) {
-            if (!is_string($settings['third-party-src'])) {
-                throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::third-party-src value is not a string.');
-            }
-            if ($settings['third-party-src'] === '') {
-                throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::third-party-src value is empty.');
-            }
-            $this->thirdPartySrc = $settings['third-party-src'];
-        }
+        $this->validateAndSetFirstPartyConfig($settings);
+        $this->validateAndSetThirdPartyConfig($settings);
 
         /**
          * dest
@@ -184,50 +145,12 @@ class Plugin implements PluginInterface, EventSubscriberInterface
 
         if (isset($settings['dest'])) {
             if (!is_string($settings['dest'])) {
-                throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::dest value is not a string.');
+                throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer.dest is not a string.');
             }
             if ($settings['dest'] === '') {
-                throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::dest value is empty.');
+                throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer.dest is an empty string.');
             }
             $this->dest = $settings['dest'];
-        }
-
-        /**
-         * first-party-paths
-         */
-
-        if (isset($settings['first-party-paths'])) {
-            if (!is_array($settings['first-party-paths'])) {
-                throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::first-party-paths value is not an array.');
-            }
-            foreach ($settings['first-party-paths'] as $index => $path) {
-                if (!is_string($path)) {
-                    throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::first-party-paths['.$index.'] value is not a string.');
-                }
-                if ($path === '') {
-                    throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::first-party-paths['.$index.'] value is empty.');
-                }
-            }
-            $this->firstPartyPaths = array_merge($this->firstPartyPaths, $settings['first-party-paths']);
-        }
-
-        /**
-         * third-party-paths
-         */
-
-        if (isset($settings['third-party-paths'])) {
-            if (!is_array($settings['third-party-paths'])) {
-                throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::third-party-paths value is not an array.');
-            }
-            foreach ($settings['third-party-paths'] as $index => $path) {
-                if (!is_string($path)) {
-                    throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::third-party-paths['.$index.'] value is not a string.');
-                }
-                if ($path === '') {
-                    throw new InvalidArgumentException('composer.json::extra::agilo-wp-package-installer::third-party-paths['.$index.'] value is empty.');
-                }
-            }
-            $this->thirdPartyPaths = array_merge($this->thirdPartyPaths, $settings['third-party-paths']);
         }
 
         $cwd = getcwd();
@@ -235,22 +158,100 @@ class Plugin implements PluginInterface, EventSubscriberInterface
             throw new RuntimeException('getcwd() failed.');
         }
 
-        $this->firstPartySrcDir = $this->fs->normalizePath($cwd.'/'.$this->firstPartysrc);
-        $this->thirdPartySrcDir = $this->fs->normalizePath($cwd.'/'.$this->thirdPartySrc);
-        $this->destDir = $this->fs->normalizePath($cwd.'/'.$this->dest);
+        $this->firstPartySrcDir = $this->fs->normalizePath($cwd . '/' . $this->firstPartysrc);
+        $this->thirdPartySrcDir = $this->fs->normalizePath($cwd . '/' . $this->thirdPartySrc);
+        $this->destDir = $this->fs->normalizePath($cwd . '/' . $this->dest);
+    }
+
+    private function validateAndSetFirstPartyConfig(array $config)
+    {
+        $firstPartyConfig = isset($config['first-party']) && is_array($config['first-party']) ? $config['first-party'] : [];
+        $firstPartyConfigOverride = $this->context && isset($config['overrides'][$this->context]) && is_array($config['overrides'][$this->context]) ? $config['overrides'][$this->context] : [];
+        $firstPartyConfig = array_merge($firstPartyConfig, $firstPartyConfigOverride);
+
+        if (isset($firstPartyConfig['symlink'])) {
+            if (!is_bool($firstPartyConfig['symlink'])) {
+                throw new InvalidArgumentException('first-party.symlink is not a boolean.');
+            }
+            $this->firstPartySymlinkedBuild = $firstPartyConfig['symlink'];
+        }
+
+        if (isset($firstPartyConfig['src'])) {
+            if (!is_string($firstPartyConfig['src'])) {
+                throw new InvalidArgumentException('first-party.src is not a string.');
+            }
+            if ($firstPartyConfig['src'] === '') {
+                throw new InvalidArgumentException('first-party.src is an empty string.');
+            }
+            $this->firstPartysrc = $firstPartyConfig['src'];
+        }
+
+        if (isset($firstPartyConfig['paths'])) {
+            if (!is_array($firstPartyConfig['paths'])) {
+                throw new InvalidArgumentException('first-party.paths is not an array.');
+            }
+            foreach ($firstPartyConfig['paths'] as $index => $path) {
+                if (!is_string($path)) {
+                    throw new InvalidArgumentException('first-party.paths[' . $index . '] is not a string.');
+                }
+                if ($path === '') {
+                    throw new InvalidArgumentException('first-party.paths[' . $index . '] is an empty string.');
+                }
+            }
+            $this->firstPartyPaths = array_merge($this->firstPartyPaths, $firstPartyConfig['paths']);
+        }
+    }
+
+    private function validateAndSetThirdPartyConfig(array $config)
+    {
+        $thirdPartyConfig = isset($config['third-party']) && is_array($config['third-party']) ? $config['third-party'] : [];
+        $thirdPartyConfigOverride = $this->context && isset($config['overrides'][$this->context]) && is_array($config['overrides'][$this->context]) ? $config['overrides'][$this->context] : [];
+        $thirdPartyConfig = array_merge($thirdPartyConfig, $thirdPartyConfigOverride);
+
+        if (isset($thirdPartyConfig['symlink'])) {
+            if (!is_bool($thirdPartyConfig['symlink'])) {
+                throw new InvalidArgumentException('third-party.symlink is not a boolean.');
+            }
+            $this->thirdPartySymlinkedBuild = $thirdPartyConfig['symlink'];
+        }
+
+        if (isset($thirdPartyConfig['src'])) {
+            if (!is_string($thirdPartyConfig['src'])) {
+                throw new InvalidArgumentException('third-party.src is not a string.');
+            }
+            if ($thirdPartyConfig['src'] === '') {
+                throw new InvalidArgumentException('third-party.src is an empty string.');
+            }
+            $this->thirdPartySrc = $thirdPartyConfig['src'];
+        }
+
+        if (isset($thirdPartyConfig['paths'])) {
+            if (!is_array($thirdPartyConfig['paths'])) {
+                throw new InvalidArgumentException('third-party.paths is not an array.');
+            }
+            foreach ($thirdPartyConfig['paths'] as $index => $path) {
+                if (!is_string($path)) {
+                    throw new InvalidArgumentException('third-party.paths[' . $index . '] is not a string.');
+                }
+                if ($path === '') {
+                    throw new InvalidArgumentException('third-party.paths[' . $index . '] is an empty string.');
+                }
+            }
+            $this->thirdPartyPaths = array_merge($this->thirdPartyPaths, $thirdPartyConfig['paths']);
+        }
     }
 
     public function deactivate(Composer $composer, IOInterface $io)
     {
         if ($this->debug) {
-            $this->io->write(__CLASS__.'::deactivated');
+            $this->io->write(__CLASS__ . '::deactivated');
         }
     }
 
     public function uninstall(Composer $composer, IOInterface $io)
     {
         if ($this->debug) {
-            $this->io->write(__CLASS__.'::uninstall');
+            $this->io->write(__CLASS__ . '::uninstall');
         }
     }
 
@@ -266,7 +267,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
     public function onPostUpdateCmd(Event $event): void
     {
         if ($this->debug) {
-            $this->io->write(__CLASS__.'::onPostUpdateCmd');
+            $this->io->write(__CLASS__ . '::onPostUpdateCmd');
             if (function_exists('xdebug_break')) {
                 xdebug_break();
             }
@@ -288,7 +289,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
                 }
             }
 
-            foreach($finder as $fileinfo) {
+            foreach ($finder as $fileinfo) {
                 $srcPath = $fileinfo->getRealPath();
                 if ($srcPath === false) {
                     throw new RuntimeException('getRealPath() failed.');
@@ -300,10 +301,10 @@ class Plugin implements PluginInterface, EventSubscriberInterface
 
                 if ($this->thirdPartySymlinkedBuild) {
                     $this->fs->relativeSymlink($srcPath, $destPath);
-                    echo 'Symlinked '.$srcPath.' to '.$destPath.PHP_EOL;
+                    echo 'Symlinked ' . $srcPath . ' to ' . $destPath . PHP_EOL;
                 } else {
                     $this->fs->copy($srcPath, $destPath);
-                    echo 'Copied '.$srcPath.' to '.$destPath.PHP_EOL;
+                    echo 'Copied ' . $srcPath . ' to ' . $destPath . PHP_EOL;
                 }
             }
         }
@@ -324,7 +325,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
                 }
             }
 
-            foreach($finder as $fileinfo) {
+            foreach ($finder as $fileinfo) {
                 $srcPath = $fileinfo->getRealPath();
                 if ($srcPath === false) {
                     throw new RuntimeException('getRealPath() failed.');
@@ -336,10 +337,10 @@ class Plugin implements PluginInterface, EventSubscriberInterface
 
                 if ($this->firstPartySymlinkedBuild) {
                     $this->fs->relativeSymlink($srcPath, $destPath);
-                    $this->io->write('Symlinked '.$srcPath.' to '.$destPath);
+                    $this->io->write('Symlinked ' . $srcPath . ' to ' . $destPath);
                 } else {
                     $this->fs->copy($srcPath, $destPath);
-                    $this->io->write('Copied '.$srcPath.' to '.$destPath);
+                    $this->io->write('Copied ' . $srcPath . ' to ' . $destPath);
                 }
             }
         }
@@ -348,7 +349,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
     public function onPostPackageUninstall(PackageEvent $event): void
     {
         if ($this->debug) {
-            $this->io->write(__CLASS__.'::onPostPackageUninstall');
+            $this->io->write(__CLASS__ . '::onPostPackageUninstall');
             if (function_exists('xdebug_break')) {
                 xdebug_break();
             }
