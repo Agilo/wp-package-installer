@@ -10,7 +10,7 @@ use Symfony\Component\Process\Process;
 
 class BuildTest extends TestCase
 {
-    public function dataProvider()
+    public function vanillaBuildDataProvider()
     {
         return [
             [true, 'composer-symlinked-build.json'],
@@ -49,7 +49,7 @@ class BuildTest extends TestCase
     }
 
     /**
-     * @dataProvider dataProvider
+     * @dataProvider vanillaBuildDataProvider
      */
     public function testVanillaBuild(bool $isSymlinkedBuild, string $composerJsonFilename): void
     {
