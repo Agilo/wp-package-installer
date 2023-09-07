@@ -59,8 +59,8 @@
         },
         "agilo-wp-package-installer": {
             "first-party-src": "src",
-            "first-party-src-symlinked-build": false,
-            "first-party-src-paths": [
+            "first-party-symlinked-build": false,
+            "first-party-paths": [
                 "!html",
                 "!phpcs.xml.dist",
                 "!scripts",
@@ -68,8 +68,8 @@
                 "!scripts/task2.php"
             ],
             "third-party-src": "vendor",
-            "third-party-src-symlinked-build": false,
-            "third-party-src-paths": [
+            "third-party-symlinked-build": false,
+            "third-party-paths": [
                 "!wp-content/plugins/query-monitor",
                 "!wp-content/plugins/wp-crontrol",
                 "wp-content/plugins/wp-crontrol/*",

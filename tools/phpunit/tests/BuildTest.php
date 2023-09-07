@@ -120,15 +120,40 @@ class BuildTest extends TestCase
     public function vanillaBuildDataProvider()
     {
         return [
-            [true, 'composer-symlinked-build.json'],
-            [false, 'composer-non-symlinked-build.json'],
+            [true, 'composer-symlinked-vanilla.json'],
+            [false, 'composer-non-symlinked-vanilla.json'],
         ];
     }
 
     /**
      * @dataProvider vanillaBuildDataProvider
      */
-    public function testVanillaBuild(bool $isSymlinkedBuild, string $composerJsonFilename): void
+    public function testVanillaBuild(bool $isSymlinkedBuild, string $composerJsonFilename)
+    {
+        if ($isSymlinkedBuild && DIRECTORY_SEPARATOR === '\\') {
+            $this->markTestSkipped('Symlinked builds are not supported on Windows');
+        }
+
+        $firstPartySrc = TEST_PROJECT_ROOT_DIR.'/src';
+        $thirdPartySrc = TEST_PROJECT_ROOT_DIR;
+        $dest = TEST_PROJECT_ROOT_DIR.'/wordpress';
+
+        $this->setupProject($composerJsonFilename);
+        $this->assertProjectFiles($isSymlinkedBuild, $firstPartySrc, $thirdPartySrc, $dest);
+    }
+
+    public function usualComposerActionsDataProvider()
+    {
+        return [
+            [true, 'composer-symlinked-actions.json'],
+            [false, 'composer-non-symlinked-actions.json'],
+        ];
+    }
+
+    /**
+     * @dataProvider usualComposerActionsDataProvider
+     */
+    public function testUsualComposerActions(bool $isSymlinkedBuild, string $composerJsonFilename): void
     {
         if ($isSymlinkedBuild && DIRECTORY_SEPARATOR === '\\') {
             $this->markTestSkipped('Symlinked builds are not supported on Windows');
