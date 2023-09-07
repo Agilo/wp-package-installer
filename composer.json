@@ -1,32 +1,32 @@
 {
-    "name": "agilo/wp-package-installer",
-    "type": "composer-plugin",
-    "license": "MIT",
-    "config": {
-        "sort-packages": true
-    },
-    "autoload": {
-        "psr-4": {
-            "Agilo\\WpPackageInstaller\\": "src/"
-        }
-    },
-    "authors": [
-        {
-            "name": "Ivo Limić",
-            "email": "ivo@agilo.co"
-        }
-    ],
-    "require": {
-        "php": "^7.2 || ^8.0",
-        "composer-plugin-api": "^1.0 || ^2.0"
-    },
-    "extra": {
-        "class": "Agilo\\WpPackageInstaller\\Plugin"
-    },
-    "require-dev": {
-        "composer/composer": "^1.0 || ^2.0"
-    },
-    "scripts": {
-        "php-cs-fixer": "./tools/php-cs-fixer/vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php"
+  "name": "agilo/wp-package-installer",
+  "type": "composer-plugin",
+  "license": "MIT",
+  "config": {
+    "sort-packages": true
+  },
+  "autoload": {
+    "psr-4": {
+      "Agilo\\WpPackageInstaller\\": "src/"
     }
+  },
+  "authors": [
+    {
+      "name": "Ivo Limić",
+      "email": "ivo@agilo.co"
+    }
+  ],
+  "require": {
+    "php": "^7.2 || ^8.0",
+    "composer-plugin-api": "^1.0 || ^2.0"
+  },
+  "extra": {
+    "class": "Agilo\\WpPackageInstaller\\Plugin"
+  },
+  "require-dev": {
+    "composer/composer": "^1.0 || ^2.0"
+  },
+  "scripts": {
+    "php-cs-fixer": "./tools/php-cs-fixer/vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php"
+  }
 }
