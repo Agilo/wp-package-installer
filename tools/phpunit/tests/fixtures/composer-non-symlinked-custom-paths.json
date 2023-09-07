@@ -1,0 +1,81 @@
+{
+    "name": "agilo/wp-package-installer-tests",
+    "description": "Project to test agilo/wp-package-installer",
+    "authors": [
+        {
+            "name": "Ivo Limić",
+            "email": "ivo@agilo.co"
+        }
+    ],
+    "config": {
+        "vendor-dir": "vendor/vendor",
+        "secure-http": false,
+        "sort-packages": true,
+        "allow-plugins": {
+            "agilo/wp-package-installer": true,
+            "composer/installers": true,
+            "johnpbloch/wordpress-core-installer": true
+        }
+    },
+    "repositories": [
+        {
+          "type":"composer",
+          "url":"https://wpackagist.org"
+        },
+        {
+			"type": "package",
+			"package": {
+				"dist": {
+					"type": "zip",
+					"url": "plugins/redirection.5.3.10.zip"
+				},
+				"name": "redirection/redirection",
+				"type": "wordpress-plugin",
+				"version": "5.3.10"
+			}
+		},
+        {
+            "type": "path",
+            "url": "./wp-package-installer",
+            "options": {
+                "symlink": true
+            }
+        }
+    ],
+    "require": {
+        "agilo/wp-package-installer": "@dev",
+        "johnpbloch/wordpress": "6.2.1",
+        "redirection/redirection": "^5.3",
+        "wpackagist-plugin/query-monitor": "^3.12",
+        "wpackagist-plugin/wp-crontrol": "1.14"
+    },
+    "extra": {
+        "wordpress-install-dir": "public",
+        "installer-paths": {
+            "vendor/wp-content/plugins/{$name}/": ["type:wordpress-plugin"],
+            "vendor/wp-content/themes/{$name}/": ["type:wordpress-theme"],
+            "vendor/wp-content/mu-plugins/{$name}/": ["type:wordpress-muplugin"],
+            "vendor/wp-content/{$name}/": ["type:wordpress-dropin"]
+        },
+        "agilo-wp-package-installer": {
+            "first-party-src": "src",
+            "first-party-src-symlinked-build": false,
+            "first-party-src-paths": [
+                "!html",
+                "!phpcs.xml.dist",
+                "!scripts",
+                "scripts/*",
+                "!scripts/task2.php"
+            ],
+            "third-party-src": "vendor",
+            "third-party-src-symlinked-build": false,
+            "third-party-src-paths": [
+                "!wp-content/plugins/query-monitor",
+                "!wp-content/plugins/wp-crontrol",
+                "wp-content/plugins/wp-crontrol/*",
+                "!wp-content/plugins/wp-crontrol/readme.md"
+            ],
+            "dest": "public"
+        }
+    }
+}

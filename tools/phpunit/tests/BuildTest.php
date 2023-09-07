@@ -218,4 +218,26 @@ class BuildTest extends TestCase
         $this->assertFileEquals($thirdPartySrc.'/wp-content/plugins/wp-crontrol/wp-crontrol.php', $dest.'/wp-content/plugins/wp-crontrol/wp-crontrol.php');
         $this->assertFileNotExists($dest.'/wp-content/plugins/wp-crontrol/readme.md');
     }
+
+    public function testNonSymlinkedBuildWithCustomPaths()
+    {
+        $firstPartySrc = TEST_PROJECT_ROOT_DIR.'/src';
+        $thirdPartySrc = TEST_PROJECT_ROOT_DIR.'/vendor';
+        $dest = TEST_PROJECT_ROOT_DIR.'/public';
+
+        $this->setupProject('composer-non-symlinked-custom-paths.json');
+
+        $this->assertFileNotExists($dest.'/html');
+        $this->assertFileNotExists($dest.'/phpcs.xml.dist');
+
+        $this->assertFileExists($dest.'/scripts/task1.php');
+        $this->assertFileEquals($firstPartySrc.'/scripts/task1.php', $dest.'/scripts/task1.php');
+        $this->assertFileNotExists($dest.'/scripts/task2.php');
+
+        $this->assertFileNotExists($dest.'/wp-content/plugins/query-monitor');
+
+        $this->assertFileExists($dest.'/wp-content/plugins/wp-crontrol/wp-crontrol.php');
+        $this->assertFileEquals($thirdPartySrc.'/wp-content/plugins/wp-crontrol/wp-crontrol.php', $dest.'/wp-content/plugins/wp-crontrol/wp-crontrol.php');
+        $this->assertFileNotExists($dest.'/wp-content/plugins/wp-crontrol/readme.md');
+    }
 }
