@@ -40,7 +40,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
 
     /**
      * Normalized absolute path to the destination directory without trailing slash.
-     * 
+     *
      * @var string
      */
     private $dest;
@@ -125,7 +125,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
             /**
              * src
              */
-    
+
             if (isset($source['src'])) {
                 if (!is_string($source['src'])) {
                     throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer.sources.' . $name . '.src is not a string.');
@@ -144,7 +144,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
             /**
              * mode
              */
-    
+
             if (isset($source['mode'])) {
                 if (!is_string($source['mode'])) {
                     throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer.sources.' . $name . '.mode is not a string.');
@@ -155,11 +155,11 @@ class Plugin implements PluginInterface, EventSubscriberInterface
             } else {
                 // every source has a default mode
             }
-    
+
             /**
              * paths
              */
-    
+
             if (isset($source['paths'])) {
                 if (!is_array($source['paths'])) {
                     throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer.sources.' . $name . '.paths is not an array.');
@@ -228,21 +228,21 @@ class Plugin implements PluginInterface, EventSubscriberInterface
             if (!isset($configOverride['sources'])) {
                 continue;
             }
-    
+
             if (!is_array($configOverride['sources'])) {
                 throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer.overrides.'.$context.'.sources is not an object.');
             }
-    
+
             foreach ($configOverride['sources'] as $name => $source) {
-    
+
                 if (!is_array($source)) {
                     throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer.overrides.'.$context.'.sources.' . $name . ' is not an object.');
                 }
-    
+
                 /**
                  * src
                  */
-        
+
                 if (isset($source['src'])) {
                     if (!is_string($source['src'])) {
                         throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer.overrides.'.$context.'.sources.' . $name . '.src is not a string.');
@@ -251,11 +251,11 @@ class Plugin implements PluginInterface, EventSubscriberInterface
                         throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer.overrides.'.$context.'.sources.' . $name . '.src is an empty string.');
                     }
                 }
-        
+
                 /**
                  * mode
                  */
-        
+
                 if (isset($source['mode'])) {
                     if (!is_string($source['mode'])) {
                         throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer.overrides.'.$context.'.sources.' . $name . '.mode is not a string.');
@@ -268,7 +268,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
                 /**
                  * paths
                  */
-        
+
                 if (isset($source['paths'])) {
                     if (!is_array($source['paths'])) {
                         throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer.overrides.'.$context.'.sources.' . $name . '.paths is not an array.');
