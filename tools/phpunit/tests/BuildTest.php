@@ -6,6 +6,7 @@ namespace Agilo\WpPackageInstaller\Tests;
 
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Finder\Finder;
 use Symfony\Component\Process\Process;
 
 class BuildTest extends TestCase
@@ -29,8 +30,13 @@ class BuildTest extends TestCase
         $this->assertFileExists(TEST_PROJECT_ROOT_DIR.'/src/wp-config.php');
 
         // copy the wp-package-installer package to the tmp dir
-        $filesystem->mirror(PROJECT_ROOT_DIR, TEST_PROJECT_ROOT_DIR.'/wp-package-installer');
+        $filesystem->mirror(
+            PROJECT_ROOT_DIR,
+            TEST_PROJECT_ROOT_DIR.'/wp-package-installer',
+            (new Finder())->in(PROJECT_ROOT_DIR)->exclude(['tools', 'vendor'])->path('src')->path('composer.json')
+        );
         $this->assertDirectoryExists(TEST_PROJECT_ROOT_DIR.'/wp-package-installer');
+        $this->assertFileExists(TEST_PROJECT_ROOT_DIR.'/wp-package-installer/src/Plugin.php');
         $this->assertFileExists(TEST_PROJECT_ROOT_DIR.'/wp-package-installer/composer.json');
 
         $this->assertTrue(copy(TESTS_ROOT_DIR.'/tests/fixtures/'.$composerJsonFilename, TEST_PROJECT_ROOT_DIR.'/composer.json'));

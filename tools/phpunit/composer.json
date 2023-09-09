@@ -2,8 +2,9 @@
     "require": {
         "php": "^7.2 || ^8.0",
         "phpunit/phpunit": "^8",
-        "symfony/process": ">=4.4",
-        "symfony/filesystem": ">=4.4"
+        "symfony/filesystem": ">=4.4",
+        "symfony/finder": ">=4.4",
+        "symfony/process": ">=4.4"
     },
     "autoload": {
         "psr-4": {
