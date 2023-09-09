@@ -134,11 +134,11 @@ class BuildTest extends TestCase
         /**
          * test 3rd party plugins installed from ./plugins directory
          */
-        $isLink = is_link($dest.'/wp-content/plugins/redirection');
+        $isLink = is_link($dest.'/wp-content/plugins/classic-editor');
         $this->assertSame($isLink, $isSymlinkedBuild);
-        $this->assertDirectoryExists($dest.'/wp-content/plugins/redirection');
-        CustomAsserts::assertDirectoryNotEmpty($dest.'/wp-content/plugins/redirection');
-        $this->assertFileEquals($thirdPartySrc.'/wp-content/plugins/redirection/redirection.php', $dest.'/wp-content/plugins/redirection/redirection.php');
+        $this->assertDirectoryExists($dest.'/wp-content/plugins/classic-editor');
+        CustomAsserts::assertDirectoryNotEmpty($dest.'/wp-content/plugins/classic-editor');
+        $this->assertFileEquals($thirdPartySrc.'/wp-content/plugins/classic-editor/classic-editor.php', $dest.'/wp-content/plugins/classic-editor/classic-editor.php');
     }
 
     public function johnpblochBuildDataProvider(): array

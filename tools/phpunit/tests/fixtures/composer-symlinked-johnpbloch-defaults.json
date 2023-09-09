@@ -26,11 +26,11 @@
       "package": {
         "dist": {
           "type": "zip",
-          "url": "plugins/redirection.5.3.10.zip"
+          "url": "plugins/classic-editor.1.6.3.zip"
         },
-        "name": "redirection/redirection",
+        "name": "wordpress/classic-editor",
         "type": "wordpress-plugin",
-        "version": "5.3.10"
+        "version": "1.6.3"
       }
     },
     {
@@ -44,7 +44,7 @@
   "require": {
     "agilo/wp-package-installer": "@dev",
     "johnpbloch/wordpress": "6.2.1",
-    "redirection/redirection": "^5.3",
+    "wordpress/classic-editor": "^1.6.3",
     "wpackagist-plugin/query-monitor": "^3.12",
     "wpackagist-plugin/wp-crontrol": "1.14",
     "wpackagist-theme/twentysixteen": "2.9"
