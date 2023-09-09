@@ -60,13 +60,46 @@ class Copier
         return $this->src;
     }
 
+    public function getDest(): string
+    {
+        return $this->dest;
+    }
+
     public function copy(): void
     {
         if ($this->mode === 'none') {
             return;
         }
 
-        if (is_dir($this->src)) {
+        if (!is_dir($this->src)) {
+            return;
+        }
+
+        if (!$this->paths) {
+
+            /**
+             * we don't need to look inside the src dir since no paths are specified
+             */
+
+            $this->fs->ensureDirectoryExists(dirname($this->dest));
+            Util::remove($this->fs, $this->dest);
+
+            if ($this->mode === 'symlink') {
+                $this->fs->relativeSymlink($this->src, $this->dest);
+                $this->io->write('Symlinked ' . $this->src . ' to ' . $this->dest);
+            } elseif ($this->mode === 'copy') {
+                $this->fs->copy($this->src, $this->dest);
+                $this->io->write('Copied ' . $this->src . ' to ' . $this->dest);
+            } else {
+                throw new RuntimeException('Invalid mode: ' . $this->mode);
+            }
+
+        } else {
+
+            /**
+             * look inside the src dir and handle only the files/dirs that match the paths specified
+             */
+
             $finder = new Finder();
             $finder->in($this->src);
 
@@ -79,24 +112,27 @@ class Copier
             }
 
             foreach ($finder as $fileinfo) {
-                $srcPath = $fileinfo->getRealPath();
-                if ($srcPath === false) {
-                    throw new RuntimeException('getRealPath() failed.');
-                }
-                $srcPath = $this->fs->normalizePath($srcPath);
-                $destPath = str_replace($this->src, $this->dest, $srcPath);
 
-                $this->fs->ensureDirectoryExists(dirname($destPath));
-                Util::remove($this->fs, $destPath);
+                $srcPath = $fileinfo->getPathname();
+                $srcPath = $this->fs->normalizePath($srcPath); // windows compatibility
 
-                if ($this->mode === 'symlink') {
-                    $this->fs->relativeSymlink($srcPath, $destPath);
-                    $this->io->write('Symlinked ' . $srcPath . ' to ' . $destPath);
-                } elseif ($this->mode === 'copy') {
-                    $this->fs->copy($srcPath, $destPath);
-                    $this->io->write('Copied ' . $srcPath . ' to ' . $destPath);
+                if (strpos($srcPath, $this->src) === 0) {
+                    $destPath = $this->dest . substr($srcPath, strlen($this->src));
+
+                    $this->fs->ensureDirectoryExists(dirname($destPath));
+                    Util::remove($this->fs, $destPath);
+
+                    if ($this->mode === 'symlink') {
+                        $this->fs->relativeSymlink($srcPath, $destPath);
+                        $this->io->write('Symlinked ' . $srcPath . ' to ' . $destPath);
+                    } elseif ($this->mode === 'copy') {
+                        $this->fs->copy($srcPath, $destPath);
+                        $this->io->write('Copied ' . $srcPath . ' to ' . $destPath);
+                    } else {
+                        throw new RuntimeException('Invalid mode: ' . $this->mode);
+                    }
                 } else {
-                    throw new RuntimeException('Invalid mode: ' . $this->mode);
+                    $this->io->warning('Invalid src path: ' . $srcPath);
                 }
             }
         }

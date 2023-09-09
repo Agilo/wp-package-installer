@@ -8,7 +8,6 @@
     }
   ],
   "config": {
-    "vendor-dir": "vendor/vendor",
     "secure-http": false,
     "sort-packages": true,
     "allow-plugins": {
@@ -54,10 +53,13 @@
     "agilo-wp-package-installer": {
       "sources": {
         "first-party": {
-          "mode": "copy"
+          "dest": "wordpress",
+          "mode": "symlink"
         },
         "third-party": {
-          "mode": "copy"
+          "src": ".",
+          "dest": "wordpress",
+          "mode": "symlink"
         }
       }
     }

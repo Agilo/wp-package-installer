@@ -134,18 +134,18 @@ class BuildTest extends TestCase
         $this->assertFileEquals($thirdPartySrc.'/wp-content/plugins/redirection/redirection.php', $dest.'/wp-content/plugins/redirection/redirection.php');
     }
 
-    public function vanillaBuildDataProvider(): array
+    public function johnpblochBuildDataProvider(): array
     {
         return [
-            [true, 'composer-symlinked-vanilla.json'],
-            [false, 'composer-non-symlinked-vanilla.json'],
+            [true, 'composer-symlinked-johnpbloch-defaults.json'],
+            [false, 'composer-non-symlinked-johnpbloch-defaults.json'],
         ];
     }
 
     /**
-     * @dataProvider vanillaBuildDataProvider
+     * @dataProvider johnpblochBuildDataProvider
      */
-    public function testVanillaBuild(bool $isSymlinkedBuild, string $composerJsonFilename): void
+    public function testJohnpblochBuild(bool $isSymlinkedBuild, string $composerJsonFilename): void
     {
         if ($isSymlinkedBuild && DIRECTORY_SEPARATOR === '\\') {
             $this->markTestSkipped('Symlinked builds are not supported on Windows');
@@ -177,7 +177,7 @@ class BuildTest extends TestCase
         }
 
         $firstPartySrc = TEST_PROJECT_ROOT_DIR.'/src';
-        $thirdPartySrc = TEST_PROJECT_ROOT_DIR.'/vendor';
+        $thirdPartySrc = TEST_PROJECT_ROOT_DIR.'/vendor-wp';
         $dest = TEST_PROJECT_ROOT_DIR.'/public';
 
         $this->setupProject($composerJsonFilename);
@@ -256,7 +256,7 @@ class BuildTest extends TestCase
         }
 
         $firstPartySrc = TEST_PROJECT_ROOT_DIR.'/src';
-        $thirdPartySrc = TEST_PROJECT_ROOT_DIR.'/vendor';
+        $thirdPartySrc = TEST_PROJECT_ROOT_DIR.'/vendor-wp';
         $dest = TEST_PROJECT_ROOT_DIR.'/public';
 
         $this->setupProject($composerJsonFilename);

@@ -8,7 +8,6 @@
     }
   ],
   "config": {
-    "vendor-dir": "vendor/vendor",
     "secure-http": false,
     "sort-packages": true,
     "allow-plugins": {
@@ -53,10 +52,10 @@
   "extra": {
     "wordpress-install-dir": "public",
     "installer-paths": {
-      "vendor/wp-content/plugins/{$name}/": ["type:wordpress-plugin"],
-      "vendor/wp-content/themes/{$name}/": ["type:wordpress-theme"],
-      "vendor/wp-content/mu-plugins/{$name}/": ["type:wordpress-muplugin"],
-      "vendor/wp-content/{$name}/": ["type:wordpress-dropin"]
+      "vendor-wp/wp-content/plugins/{$name}/": ["type:wordpress-plugin"],
+      "vendor-wp/wp-content/themes/{$name}/": ["type:wordpress-theme"],
+      "vendor-wp/wp-content/mu-plugins/{$name}/": ["type:wordpress-muplugin"],
+      "vendor-wp/wp-content/{$name}/": ["type:wordpress-dropin"]
     },
     "agilo-wp-package-installer": {
       "sources": {
@@ -65,11 +64,10 @@
           "mode": "copy"
         },
         "third-party": {
-          "src": "vendor",
+          "src": "vendor-wp",
           "mode": "copy"
         }
-      },
-      "dest": "public"
+      }
     }
   }
 }

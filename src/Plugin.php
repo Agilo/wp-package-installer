@@ -35,13 +35,6 @@ class Plugin implements PluginInterface, EventSubscriberInterface
     /** @var Filesystem */
     private $fs;
 
-    /**
-     * Normalized absolute path to the destination directory without trailing slash.
-     *
-     * @var string
-     */
-    private $dest;
-
     /** @var Copier[] */
     private $copiers = [];
 
@@ -80,9 +73,6 @@ class Plugin implements PluginInterface, EventSubscriberInterface
         $extra = $this->composer->getPackage()->getExtra();
         $config = $extra['agilo-wp-package-installer'] ?? [];
         $this->validateConfig($config);
-
-        $this->dest = $this->fs->normalizePath($this->cwd . '/' . ($config['dest'] ?? 'wordpress'));
-
         $this->buildCopiers($config);
     }
 
@@ -96,7 +86,6 @@ class Plugin implements PluginInterface, EventSubscriberInterface
         }
 
         $this->validateSources($config);
-        $this->validateDest($config);
         $this->validateOverrides($config);
     }
 
@@ -139,6 +128,21 @@ class Plugin implements PluginInterface, EventSubscriberInterface
             }
 
             /**
+             * dest
+             */
+
+            if (isset($source['dest'])) {
+                if (!is_string($source['dest'])) {
+                    throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer.sources.' . $name . '.dest is not a string.');
+                }
+                if ($source['dest'] === '') {
+                    throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer.sources.' . $name . '.dest is an empty string.');
+                }
+            } else {
+                // every source has a default dest
+            }
+
+            /**
              * mode
              */
 
@@ -171,21 +175,6 @@ class Plugin implements PluginInterface, EventSubscriberInterface
                 }
             } else {
                 // every source has default paths
-            }
-        }
-    }
-
-    /**
-     * Throws early if config is invalid.
-     */
-    private function validateDest($config): void
-    {
-        if (isset($config['dest'])) {
-            if (!is_string($config['dest'])) {
-                throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer.dest is not a string.');
-            }
-            if ($config['dest'] === '') {
-                throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer.dest is an empty string.');
             }
         }
     }
@@ -250,6 +239,19 @@ class Plugin implements PluginInterface, EventSubscriberInterface
                 }
 
                 /**
+                 * dest
+                 */
+
+                if (isset($source['dest'])) {
+                    if (!is_string($source['dest'])) {
+                        throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer.overrides.'.$context.'.sources.' . $name . '.dest is not a string.');
+                    }
+                    if ($source['dest'] === '') {
+                        throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer.overrides.'.$context.'.sources.' . $name . '.dest is an empty string.');
+                    }
+                }
+
+                /**
                  * mode
                  */
 
@@ -301,7 +303,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
                 $this->io,
                 $this->fs,
                 $this->fs->normalizePath($this->cwd . '/' . $source['src']),
-                $this->dest,
+                $this->fs->normalizePath($this->cwd . '/' . $source['dest']),
                 $source['mode'],
                 $source['paths']
             );
@@ -314,25 +316,29 @@ class Plugin implements PluginInterface, EventSubscriberInterface
 
         if ($name === 'first-party') {
             $default = [
-                'src' => 'src',
-                'mode' => 'symlink',
+                'src'   => 'src',
+                'dest'  => 'public',
+                'mode'  => 'symlink',
                 'paths' => [],
             ];
         } elseif ($name === 'third-party') {
             $default = [
-                'src' => '.',
-                'mode' => 'symlink',
+                'src'   => 'vendor-wp',
+                'dest'  => 'public',
+                'mode'  => 'symlink',
                 'paths' => [],
             ];
         } elseif ($name === 'uploads') {
             $default = [
-                'src' => 'shared/uploads',
-                'mode' => 'symlink',
+                'src'   => 'shared/uploads',
+                'dest'  => 'public/wp-content/uploads',
+                'mode'  => 'symlink',
                 'paths' => [],
             ];
         } else {
             $default = [
-                'mode' => 'symlink',
+                'dest'  => 'public',
+                'mode'  => 'symlink',
                 'paths' => [],
             ];
         }
@@ -440,7 +446,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
         $installPath = $this->composer->getInstallationManager()->getInstallPath($package);
 
         if ($installPath) {
-            $destPath = str_replace($copier->getSrc(), $this->dest, $installPath);
+            $destPath = str_replace($copier->getSrc(), $copier->getDest(), $installPath); // todo: probably no safe to use str_replace, fix this
 
             // strip trailing slashes
             $destPath = rtrim($destPath, '/\\');
