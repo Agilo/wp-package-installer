@@ -33,6 +33,7 @@ class BuildTest extends TestCase
         $filesystem->mirror(
             PROJECT_ROOT_DIR,
             TEST_PROJECT_ROOT_DIR.'/wp-package-installer',
+            // copy only src dir and composer.json
             (new Finder())->in(PROJECT_ROOT_DIR)->exclude(['tools', 'vendor'])->path('src')->path('composer.json')
         );
         $this->assertDirectoryExists(TEST_PROJECT_ROOT_DIR.'/wp-package-installer');
