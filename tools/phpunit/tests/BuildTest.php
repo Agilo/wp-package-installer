@@ -93,7 +93,15 @@ class BuildTest extends TestCase
         $this->assertFileEquals($firstPartySrc.'/wp-content/plugins/agilo-hello-world-1/plugin.php', $dest.'/wp-content/plugins/agilo-hello-world-1/plugin.php');
 
         /**
-         * test standard wpackagist-plugin/<plugin> style plugins
+         * test 1st party drop-ins
+         */
+        $isLink = is_link($dest.'/wp-content/sunrise.php');
+        $this->assertSame($isLink, $isSymlinkedBuild);
+        $this->assertFileExists($dest.'/wp-content/sunrise.php');
+        $this->assertFileEquals($firstPartySrc.'/wp-content/sunrise.php', $dest.'/wp-content/sunrise.php');
+
+        /**
+         * test 3rd party wpackagist-plugin/<plugin> style plugins
          */
         $isLink = is_link($dest.'/wp-content/plugins/query-monitor');
         $this->assertSame($isLink, $isSymlinkedBuild);
@@ -108,7 +116,7 @@ class BuildTest extends TestCase
         $this->assertFileEquals($thirdPartySrc.'/wp-content/plugins/wp-crontrol/wp-crontrol.php', $dest.'/wp-content/plugins/wp-crontrol/wp-crontrol.php');
 
         /**
-         * test standard wpackagist-plugin/<theme> style themes
+         * test 3rd party wpackagist-plugin/<theme> style themes
          */
         $isLink = is_link($dest.'/wp-content/themes/twentysixteen');
         $this->assertSame($isLink, $isSymlinkedBuild);
@@ -117,7 +125,7 @@ class BuildTest extends TestCase
         $this->assertFileEquals($thirdPartySrc.'/wp-content/themes/twentysixteen/style.css', $dest.'/wp-content/themes/twentysixteen/style.css');
 
         /**
-         * test plugins installed from ./plugins directory
+         * test 3rd party plugins installed from ./plugins directory
          */
         $isLink = is_link($dest.'/wp-content/plugins/redirection');
         $this->assertSame($isLink, $isSymlinkedBuild);
