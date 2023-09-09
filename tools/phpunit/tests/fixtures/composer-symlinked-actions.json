@@ -8,7 +8,6 @@
     }
   ],
   "config": {
-    "vendor-dir": "vendor/vendor",
     "secure-http": false,
     "sort-packages": true,
     "allow-plugins": {
@@ -47,26 +46,28 @@
     "johnpbloch/wordpress": "6.2.1",
     "redirection/redirection": "^5.3",
     "wpackagist-plugin/query-monitor": "^3.12",
-    "wpackagist-plugin/wp-crontrol": "1.14"
+    "wpackagist-plugin/wp-crontrol": "1.14",
+    "wpackagist-theme/twentysixteen": "2.9"
   },
   "extra": {
     "wordpress-install-dir": "public",
     "installer-paths": {
-      "vendor/wp-content/plugins/{$name}/": ["type:wordpress-plugin"],
-      "vendor/wp-content/themes/{$name}/": ["type:wordpress-theme"],
-      "vendor/wp-content/mu-plugins/{$name}/": ["type:wordpress-muplugin"],
-      "vendor/wp-content/{$name}/": ["type:wordpress-dropin"]
+      "vendor-wp/wp-content/plugins/{$name}/": ["type:wordpress-plugin"],
+      "vendor-wp/wp-content/themes/{$name}/": ["type:wordpress-theme"],
+      "vendor-wp/wp-content/mu-plugins/{$name}/": ["type:wordpress-muplugin"],
+      "vendor-wp/wp-content/{$name}/": ["type:wordpress-dropin"]
     },
     "agilo-wp-package-installer": {
-      "first-party": {
-        "src": "src",
-        "symlink": true
-      },
-      "third-party": {
-        "src": "vendor",
-        "symlink": true
-      },
-      "dest": "public"
+      "sources": {
+        "first-party": {
+          "src": "src",
+          "mode": "symlink"
+        },
+        "third-party": {
+          "src": "vendor-wp",
+          "mode": "symlink"
+        }
+      }
     }
   }
 }

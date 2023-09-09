@@ -8,7 +8,6 @@
     }
   ],
   "config": {
-    "vendor-dir": "vendor/vendor",
     "secure-http": false,
     "sort-packages": true,
     "allow-plugins": {
@@ -47,15 +46,21 @@
     "johnpbloch/wordpress": "6.2.1",
     "redirection/redirection": "^5.3",
     "wpackagist-plugin/query-monitor": "^3.12",
-    "wpackagist-plugin/wp-crontrol": "1.14"
+    "wpackagist-plugin/wp-crontrol": "1.14",
+    "wpackagist-theme/twentysixteen": "2.9"
   },
   "extra": {
     "agilo-wp-package-installer": {
-      "first-party": {
-        "symlink": false
-      },
-      "third-party": {
-        "symlink": false
+      "sources": {
+        "first-party": {
+          "dest": "wordpress",
+          "mode": "symlink"
+        },
+        "third-party": {
+          "src": ".",
+          "dest": "wordpress",
+          "mode": "symlink"
+        }
       }
     }
   }

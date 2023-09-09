@@ -14,85 +14,17 @@ use Composer\Script\ScriptEvents;
 use Composer\Util\Filesystem;
 use InvalidArgumentException;
 use RuntimeException;
-use Symfony\Component\Finder\Finder;
-use Symfony\Component\Finder\Glob;
 
 class Plugin implements PluginInterface, EventSubscriberInterface
 {
     /** @var bool */
     private $debug = false;
 
+    /** @var string */
+    private $cwd;
+
     /** @var string|null */
     private $context = null;
-
-    /** @var bool */
-    private $firstPartySymlinkedBuild = true;
-
-    /** @var bool */
-    private $thirdPartySymlinkedBuild = true;
-
-    /**
-     * Relative path to the first party source directory without trailing slash.
-     *
-     * @var string
-     */
-    private $firstPartysrc = 'src';
-
-    /**
-     * Relative path to the third party source directory without trailing slash.
-     *
-     * @var string
-     */
-    private $thirdPartySrc = '.';
-
-    /**
-     * Relative path to the destination directory without trailing slash.
-     *
-     * @var string
-     */
-    private $dest = 'wordpress';
-
-    /**
-     * Absolute path to the first party source directory without trailing slash.
-     *
-     * @var string
-     */
-    private $firstPartySrcDir;
-
-    /**
-     * Absolute path to the third party source directory without trailing slash.
-     *
-     * @var string
-     */
-    private $thirdPartySrcDir;
-
-    /**
-     * Absolute path to the destination directory without trailing slash.
-     *
-     * @var string
-     */
-    private $destDir;
-
-    /**
-     * First party package relative paths.
-     */
-    private $firstPartyPaths = [
-        '*',
-        '!wp-content',
-        'wp-content/plugins/*',
-        'wp-content/themes/*',
-        'wp-content/mu-plugins/*',
-        'wp-content/languages/*',
-        'wp-content/*.php',
-    ];
-
-    private $thirdPartyPaths = [
-        'wp-content/plugins/*',
-        'wp-content/themes/*',
-        'wp-content/mu-plugins/*',
-        'wp-content/languages/*',
-        'wp-content/*.php',
-    ];
 
     /** @var Composer */
     private $composer;
@@ -102,6 +34,9 @@ class Plugin implements PluginInterface, EventSubscriberInterface
 
     /** @var Filesystem */
     private $fs;
+
+    /** @var Copier[] */
+    private $copiers = [];
 
     public function activate(Composer $composer, IOInterface $io)
     {
@@ -119,126 +54,336 @@ class Plugin implements PluginInterface, EventSubscriberInterface
             }
         }
 
+        $this->cwd = getcwd();
+        if ($this->cwd === false) {
+            throw new RuntimeException('Could not determine the current working directory.');
+        }
+
         $context = getenv('AGILO_WP_PACKAGE_INSTALLER_CONTEXT');
         if (is_string($context) && $context !== '') {
             $this->context = $context;
         }
 
         $this->fs = new Filesystem();
-        $extra = $this->composer->getPackage()->getExtra();
 
         /**
-         * Get and validate main settings array.
+         * Get and validate main config array.
          */
-        $settings = $extra['agilo-wp-package-installer'] ?? [];
 
-        if (!is_array($settings)) {
+        $extra = $this->composer->getPackage()->getExtra();
+        $config = $extra['agilo-wp-package-installer'] ?? [];
+        $this->validateConfig($config);
+        $this->buildCopiers($config);
+    }
+
+    /**
+     * Throws early if config is invalid.
+     */
+    private function validateConfig($config): void
+    {
+        if (!is_array($config)) {
             throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer is not an array.');
         }
 
-        $this->validateAndSetFirstPartyConfig($settings);
-        $this->validateAndSetThirdPartyConfig($settings);
-
-        /**
-         * dest
-         */
-
-        if (isset($settings['dest'])) {
-            if (!is_string($settings['dest'])) {
-                throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer.dest is not a string.');
-            }
-            if ($settings['dest'] === '') {
-                throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer.dest is an empty string.');
-            }
-            $this->dest = $settings['dest'];
-        }
-
-        $cwd = getcwd();
-        if ($cwd === false) {
-            throw new RuntimeException('getcwd() failed.');
-        }
-
-        $this->firstPartySrcDir = $this->fs->normalizePath($cwd . '/' . $this->firstPartysrc);
-        $this->thirdPartySrcDir = $this->fs->normalizePath($cwd . '/' . $this->thirdPartySrc);
-        $this->destDir = $this->fs->normalizePath($cwd . '/' . $this->dest);
+        $this->validateSources($config);
+        $this->validateOverrides($config);
     }
 
-    private function validateAndSetFirstPartyConfig(array $config)
+    /**
+     * Throws early if config is invalid.
+     */
+    private function validateSources($config): void
     {
-        $firstPartyConfig = isset($config['first-party']) && is_array($config['first-party']) ? $config['first-party'] : [];
-        $firstPartyConfigOverride = $this->context && isset($config['overrides'][$this->context]) && is_array($config['overrides'][$this->context]) ? $config['overrides'][$this->context] : [];
-        $firstPartyConfig = array_merge($firstPartyConfig, $firstPartyConfigOverride);
-
-        if (isset($firstPartyConfig['symlink'])) {
-            if (!is_bool($firstPartyConfig['symlink'])) {
-                throw new InvalidArgumentException('first-party.symlink is not a boolean.');
-            }
-            $this->firstPartySymlinkedBuild = $firstPartyConfig['symlink'];
+        if (!isset($config['sources'])) {
+            return;
         }
 
-        if (isset($firstPartyConfig['src'])) {
-            if (!is_string($firstPartyConfig['src'])) {
-                throw new InvalidArgumentException('first-party.src is not a string.');
-            }
-            if ($firstPartyConfig['src'] === '') {
-                throw new InvalidArgumentException('first-party.src is an empty string.');
-            }
-            $this->firstPartysrc = $firstPartyConfig['src'];
+        if (!is_array($config['sources'])) {
+            throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer.sources is not an object.');
         }
 
-        if (isset($firstPartyConfig['paths'])) {
-            if (!is_array($firstPartyConfig['paths'])) {
-                throw new InvalidArgumentException('first-party.paths is not an array.');
+        foreach ($config['sources'] as $name => $source) {
+
+            if (!is_array($source)) {
+                throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer.sources.' . $name . ' is not an object.');
             }
-            foreach ($firstPartyConfig['paths'] as $index => $path) {
-                if (!is_string($path)) {
-                    throw new InvalidArgumentException('first-party.paths[' . $index . '] is not a string.');
+
+            /**
+             * src
+             */
+
+            if (isset($source['src'])) {
+                if (!is_string($source['src'])) {
+                    throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer.sources.' . $name . '.src is not a string.');
                 }
-                if ($path === '') {
-                    throw new InvalidArgumentException('first-party.paths[' . $index . '] is an empty string.');
+                if ($source['src'] === '') {
+                    throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer.sources.' . $name . '.src is an empty string.');
+                }
+            } else {
+                if (in_array($name, ['first-party', 'third-party', 'uploads'], true)) {
+                    // these have a default src
+                } else {
+                    throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer.sources.' . $name . '.src is not set.');
                 }
             }
-            $this->firstPartyPaths = array_merge($this->firstPartyPaths, $firstPartyConfig['paths']);
+
+            /**
+             * dest
+             */
+
+            if (isset($source['dest'])) {
+                if (!is_string($source['dest'])) {
+                    throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer.sources.' . $name . '.dest is not a string.');
+                }
+                if ($source['dest'] === '') {
+                    throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer.sources.' . $name . '.dest is an empty string.');
+                }
+            } else {
+                // every source has a default dest
+            }
+
+            /**
+             * mode
+             */
+
+            if (isset($source['mode'])) {
+                if (!is_string($source['mode'])) {
+                    throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer.sources.' . $name . '.mode is not a string.');
+                }
+                if (!in_array($source['mode'], ['none', 'copy', 'symlink'])) {
+                    throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer.sources.' . $name . '.mode is not one of "none", "copy", or "symlink".');
+                }
+            } else {
+                // every source has a default mode
+            }
+
+            /**
+             * paths
+             */
+
+            if (isset($source['paths'])) {
+                if (!is_array($source['paths'])) {
+                    throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer.sources.' . $name . '.paths is not an array.');
+                }
+                foreach ($source['paths'] as $index => $path) {
+                    if (!is_string($path)) {
+                        throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer.sources.' . $name . '.paths[' . $index . '] is not a string.');
+                    }
+                    if ($path === '') {
+                        throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer.sources.' . $name . '.paths[' . $index . '] is an empty string.');
+                    }
+                }
+            } else {
+                // every source has default paths
+            }
         }
     }
 
-    private function validateAndSetThirdPartyConfig(array $config)
+    /**
+     * Throws early if config is invalid.
+     */
+    private function validateOverrides($config): void
     {
-        $thirdPartyConfig = isset($config['third-party']) && is_array($config['third-party']) ? $config['third-party'] : [];
-        $thirdPartyConfigOverride = $this->context && isset($config['overrides'][$this->context]) && is_array($config['overrides'][$this->context]) ? $config['overrides'][$this->context] : [];
-        $thirdPartyConfig = array_merge($thirdPartyConfig, $thirdPartyConfigOverride);
-
-        if (isset($thirdPartyConfig['symlink'])) {
-            if (!is_bool($thirdPartyConfig['symlink'])) {
-                throw new InvalidArgumentException('third-party.symlink is not a boolean.');
-            }
-            $this->thirdPartySymlinkedBuild = $thirdPartyConfig['symlink'];
+        if (!isset($config['overrides'])) {
+            return;
         }
 
-        if (isset($thirdPartyConfig['src'])) {
-            if (!is_string($thirdPartyConfig['src'])) {
-                throw new InvalidArgumentException('third-party.src is not a string.');
-            }
-            if ($thirdPartyConfig['src'] === '') {
-                throw new InvalidArgumentException('third-party.src is an empty string.');
-            }
-            $this->thirdPartySrc = $thirdPartyConfig['src'];
+        if (!is_array($config['overrides'])) {
+            throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer.overrides is not an object.');
         }
 
-        if (isset($thirdPartyConfig['paths'])) {
-            if (!is_array($thirdPartyConfig['paths'])) {
-                throw new InvalidArgumentException('third-party.paths is not an array.');
-            }
-            foreach ($thirdPartyConfig['paths'] as $index => $path) {
-                if (!is_string($path)) {
-                    throw new InvalidArgumentException('third-party.paths[' . $index . '] is not a string.');
+        foreach ($config['overrides'] as $context => $configOverride) {
+
+            /**
+             * dest
+             */
+
+            if (isset($configOverride['dest'])) {
+                if (!is_string($configOverride['dest'])) {
+                    throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer.overrides.'.$context.'.dest is not a string.');
                 }
-                if ($path === '') {
-                    throw new InvalidArgumentException('third-party.paths[' . $index . '] is an empty string.');
+                if ($configOverride['dest'] === '') {
+                    throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer.overrides.'.$context.'.dest is an empty string.');
                 }
             }
-            $this->thirdPartyPaths = array_merge($this->thirdPartyPaths, $thirdPartyConfig['paths']);
+
+            /**
+             * sources
+             */
+
+            if (!isset($configOverride['sources'])) {
+                continue;
+            }
+
+            if (!is_array($configOverride['sources'])) {
+                throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer.overrides.'.$context.'.sources is not an object.');
+            }
+
+            foreach ($configOverride['sources'] as $name => $source) {
+
+                if (!is_array($source)) {
+                    throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer.overrides.'.$context.'.sources.' . $name . ' is not an object.');
+                }
+
+                /**
+                 * src
+                 */
+
+                if (isset($source['src'])) {
+                    if (!is_string($source['src'])) {
+                        throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer.overrides.'.$context.'.sources.' . $name . '.src is not a string.');
+                    }
+                    if ($source['src'] === '') {
+                        throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer.overrides.'.$context.'.sources.' . $name . '.src is an empty string.');
+                    }
+                }
+
+                /**
+                 * dest
+                 */
+
+                if (isset($source['dest'])) {
+                    if (!is_string($source['dest'])) {
+                        throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer.overrides.'.$context.'.sources.' . $name . '.dest is not a string.');
+                    }
+                    if ($source['dest'] === '') {
+                        throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer.overrides.'.$context.'.sources.' . $name . '.dest is an empty string.');
+                    }
+                }
+
+                /**
+                 * mode
+                 */
+
+                if (isset($source['mode'])) {
+                    if (!is_string($source['mode'])) {
+                        throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer.overrides.'.$context.'.sources.' . $name . '.mode is not a string.');
+                    }
+                    if (!in_array($source['mode'], ['none', 'copy', 'symlink'])) {
+                        throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer.overrides.'.$context.'.sources.' . $name . '.mode is not one of "none", "copy", or "symlink".');
+                    }
+                }
+
+                /**
+                 * paths
+                 */
+
+                if (isset($source['paths'])) {
+                    if (!is_array($source['paths'])) {
+                        throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer.overrides.'.$context.'.sources.' . $name . '.paths is not an array.');
+                    }
+                    foreach ($source['paths'] as $index => $path) {
+                        if (!is_string($path)) {
+                            throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer.overrides.'.$context.'.sources.' . $name . '.paths[' . $index . '] is not a string.');
+                        }
+                        if ($path === '') {
+                            throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer.overrides.'.$context.'.sources.' . $name . '.paths[' . $index . '] is an empty string.');
+                        }
+                    }
+                }
+            }
         }
+    }
+
+    private function buildCopiers($config)
+    {
+        $sourceNames = array_keys(array_merge(
+            $config['sources'] ?? [],
+            [
+                'first-party' => [],
+                'third-party' => [],
+                'uploads'     => [],
+            ]
+        ));
+
+        foreach ($sourceNames as $name) {
+            $source = $this->getSourceConfig($config, $name);
+            $this->copiers[] = new Copier(
+                $name,
+                $this->io,
+                $this->fs,
+                $this->fs->normalizePath($this->cwd . '/' . $source['src']),
+                $this->fs->normalizePath($this->cwd . '/' . $source['dest']),
+                $source['mode'],
+                $source['paths']
+            );
+        }
+    }
+
+    private function getSourceConfig($config, $name): array
+    {
+        $sources = $config['sources'] ?? [];
+
+        if ($name === 'first-party') {
+            $default = [
+                'src'   => 'src',
+                'dest'  => 'public',
+                'mode'  => 'symlink',
+                'paths' => [],
+            ];
+        } elseif ($name === 'third-party') {
+            $default = [
+                'src'   => 'vendor-wp',
+                'dest'  => 'public',
+                'mode'  => 'symlink',
+                'paths' => [],
+            ];
+        } elseif ($name === 'uploads') {
+            $default = [
+                'src'   => 'shared/uploads',
+                'dest'  => 'public/wp-content/uploads',
+                'mode'  => 'symlink',
+                'paths' => [],
+            ];
+        } else {
+            $default = [
+                'dest'  => 'public',
+                'mode'  => 'symlink',
+                'paths' => [],
+            ];
+        }
+
+        if ($name === 'first-party') {
+            $source = $sources[$name] ?? [];
+        } elseif ($name === 'third-party') {
+            $source = $sources[$name] ?? [];
+        } elseif ($name === 'uploads') {
+            $source = $sources[$name] ?? [];
+        } elseif (!isset($sources[$name])) {
+            throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer.sources.' . $name . ' is not set.');
+        }
+
+        $override = $config['overrides'][$this->context]['sources'][$name] ?? [];
+
+        $sourceConfig = array_merge($default, $source, $override);
+
+        if ($name === 'first-party') {
+            $sourceConfig['paths'] = array_merge(
+                [
+                    '*',
+                    '!wp-content',
+                    'wp-content/plugins/*',
+                    'wp-content/themes/*',
+                    'wp-content/mu-plugins/*',
+                    'wp-content/languages/*',
+                    'wp-content/*.php',
+                ],
+                $sourceConfig['paths']
+            );
+        } elseif ($name === 'third-party') {
+            $sourceConfig['paths'] = array_merge(
+                [
+                    'wp-content/plugins/*',
+                    'wp-content/themes/*',
+                    'wp-content/mu-plugins/*',
+                    'wp-content/languages/*',
+                    'wp-content/*.php',
+                ],
+                $sourceConfig['paths']
+            );
+        }
+
+        return $sourceConfig;
     }
 
     public function deactivate(Composer $composer, IOInterface $io)
@@ -273,76 +418,8 @@ class Plugin implements PluginInterface, EventSubscriberInterface
             }
         }
 
-        /**
-         * Handle third party packages.
-         */
-
-        if (is_dir($this->thirdPartySrcDir)) {
-            $finder = new Finder();
-            $finder->in($this->thirdPartySrcDir);
-
-            foreach ($this->thirdPartyPaths as $path) {
-                if (substr($path, 0, 1) === '!') {
-                    $finder->notPath(Glob::toRegex(substr($path, 1)));
-                } else {
-                    $finder->path(Glob::toRegex($path));
-                }
-            }
-
-            foreach ($finder as $fileinfo) {
-                $srcPath = $fileinfo->getRealPath();
-                if ($srcPath === false) {
-                    throw new RuntimeException('getRealPath() failed.');
-                }
-                $srcPath = $this->fs->normalizePath($srcPath);
-                $destPath = str_replace($this->thirdPartySrcDir, $this->destDir, $srcPath);
-
-                $this->fs->ensureDirectoryExists(dirname($destPath));
-
-                if ($this->thirdPartySymlinkedBuild) {
-                    $this->fs->relativeSymlink($srcPath, $destPath);
-                    echo 'Symlinked ' . $srcPath . ' to ' . $destPath . PHP_EOL;
-                } else {
-                    $this->fs->copy($srcPath, $destPath);
-                    echo 'Copied ' . $srcPath . ' to ' . $destPath . PHP_EOL;
-                }
-            }
-        }
-
-        /**
-         * Handle first party packages.
-         */
-
-        if (is_dir($this->firstPartySrcDir)) {
-            $finder = new Finder();
-            $finder->in($this->firstPartySrcDir);
-
-            foreach ($this->firstPartyPaths as $path) {
-                if (substr($path, 0, 1) === '!') {
-                    $finder->notPath(Glob::toRegex(substr($path, 1)));
-                } else {
-                    $finder->path(Glob::toRegex($path));
-                }
-            }
-
-            foreach ($finder as $fileinfo) {
-                $srcPath = $fileinfo->getRealPath();
-                if ($srcPath === false) {
-                    throw new RuntimeException('getRealPath() failed.');
-                }
-                $srcPath = $this->fs->normalizePath($srcPath);
-                $destPath = str_replace($this->firstPartySrcDir, $this->destDir, $srcPath);
-
-                $this->fs->ensureDirectoryExists(dirname($destPath));
-
-                if ($this->firstPartySymlinkedBuild) {
-                    $this->fs->relativeSymlink($srcPath, $destPath);
-                    $this->io->write('Symlinked ' . $srcPath . ' to ' . $destPath);
-                } else {
-                    $this->fs->copy($srcPath, $destPath);
-                    $this->io->write('Copied ' . $srcPath . ' to ' . $destPath);
-                }
-            }
+        foreach ($this->copiers as $copier) {
+            $copier->copy();
         }
     }
 
@@ -360,25 +437,32 @@ class Plugin implements PluginInterface, EventSubscriberInterface
             return;
         }
 
+        $copier = $this->getThirdPartyCopier();
+        if (!$copier) {
+            return;
+        }
+
         $package = $operation->getPackage();
         $installPath = $this->composer->getInstallationManager()->getInstallPath($package);
 
         if ($installPath) {
-            $destPath = str_replace($this->thirdPartySrcDir, $this->destDir, $installPath);
+            $destPath = str_replace($copier->getSrc(), $copier->getDest(), $installPath); // todo: probably no safe to use str_replace, fix this
 
             // strip trailing slashes
             $destPath = rtrim($destPath, '/\\');
 
-            $this->remove($destPath);
+            Util::remove($this->fs, $destPath);
             return;
         }
     }
 
-    private function remove(string $path): bool
+    private function getThirdPartyCopier(): ?Copier
     {
-        if (is_link($path)) {
-            return $this->fs->unlink($path);
+        foreach ($this->copiers as $copier) {
+            if ($copier->getName() === 'third-party') {
+                return $copier;
+            }
         }
-        return $this->fs->remove($path);
+        return null;
     }
 }
