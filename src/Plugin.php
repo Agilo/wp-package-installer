@@ -12,11 +12,8 @@ use Composer\Plugin\PluginInterface;
 use Composer\Script\Event;
 use Composer\Script\ScriptEvents;
 use Composer\Util\Filesystem;
-use Composer\Util\Platform;
 use InvalidArgumentException;
 use RuntimeException;
-use Symfony\Component\Finder\Finder;
-use Symfony\Component\Finder\Glob;
 
 class Plugin implements PluginInterface, EventSubscriberInterface
 {
@@ -448,7 +445,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
             // strip trailing slashes
             $destPath = rtrim($destPath, '/\\');
 
-            $this->remove($destPath);
+            Util::remove($this->fs, $destPath);
             return;
         }
     }
@@ -461,13 +458,5 @@ class Plugin implements PluginInterface, EventSubscriberInterface
             }
         }
         return null;
-    }
-
-    private function remove(string $path): bool
-    {
-        if (is_link($path)) {
-            return $this->fs->unlink($path);
-        }
-        return $this->fs->remove($path);
     }
 }
