@@ -446,13 +446,16 @@ class Plugin implements PluginInterface, EventSubscriberInterface
         $installPath = $this->composer->getInstallationManager()->getInstallPath($package);
 
         if ($installPath) {
-            $destPath = str_replace($copier->getSrc(), $copier->getDest(), $installPath); // todo: probably no safe to use str_replace, fix this
+            $installPath = $this->fs->normalizePath($installPath);
+            if (strpos($installPath, $copier->getSrc()) === 0) {
+                $destPath = $copier->getDest() . substr($installPath, strlen($copier->getSrc()));
 
-            // strip trailing slashes
-            $destPath = rtrim($destPath, '/\\');
+                // strip trailing slashes
+                $destPath = rtrim($destPath, '/\\');
 
-            Util::remove($this->fs, $destPath);
-            return;
+                Util::remove($this->fs, $destPath);
+                return;
+            }
         }
     }
 
