@@ -47,7 +47,8 @@
     "johnpbloch/wordpress": "6.2.1",
     "redirection/redirection": "^5.3",
     "wpackagist-plugin/query-monitor": "^3.12",
-    "wpackagist-plugin/wp-crontrol": "1.14"
+    "wpackagist-plugin/wp-crontrol": "1.14",
+    "wpackagist-theme/twentysixteen": "2.9"
   },
   "extra": {
     "agilo-wp-package-installer": {

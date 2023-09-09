@@ -108,6 +108,15 @@ class BuildTest extends TestCase
         $this->assertFileEquals($thirdPartySrc.'/wp-content/plugins/wp-crontrol/wp-crontrol.php', $dest.'/wp-content/plugins/wp-crontrol/wp-crontrol.php');
 
         /**
+         * test standard wpackagist-plugin/<theme> style themes
+         */
+        $isLink = is_link($dest.'/wp-content/themes/twentysixteen');
+        $this->assertSame($isLink, $isSymlinkedBuild);
+        $this->assertDirectoryExists($dest.'/wp-content/themes/twentysixteen');
+        CustomAsserts::assertDirectoryNotEmpty($dest.'/wp-content/themes/twentysixteen');
+        $this->assertFileEquals($thirdPartySrc.'/wp-content/themes/twentysixteen/style.css', $dest.'/wp-content/themes/twentysixteen/style.css');
+
+        /**
          * test plugins installed from ./plugins directory
          */
         $isLink = is_link($dest.'/wp-content/plugins/redirection');
