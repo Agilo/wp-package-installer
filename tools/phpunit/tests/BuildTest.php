@@ -93,7 +93,15 @@ class BuildTest extends TestCase
         $this->assertFileEquals($firstPartySrc.'/wp-content/plugins/agilo-hello-world-1/plugin.php', $dest.'/wp-content/plugins/agilo-hello-world-1/plugin.php');
 
         /**
-         * test standard wpackagist-plugin/<plugin> style plugins
+         * test 1st party drop-ins
+         */
+        $isLink = is_link($dest.'/wp-content/sunrise.php');
+        $this->assertSame($isLink, $isSymlinkedBuild);
+        $this->assertFileExists($dest.'/wp-content/sunrise.php');
+        $this->assertFileEquals($firstPartySrc.'/wp-content/sunrise.php', $dest.'/wp-content/sunrise.php');
+
+        /**
+         * test 3rd party wpackagist-plugin/<plugin> style plugins
          */
         $isLink = is_link($dest.'/wp-content/plugins/query-monitor');
         $this->assertSame($isLink, $isSymlinkedBuild);
@@ -108,7 +116,16 @@ class BuildTest extends TestCase
         $this->assertFileEquals($thirdPartySrc.'/wp-content/plugins/wp-crontrol/wp-crontrol.php', $dest.'/wp-content/plugins/wp-crontrol/wp-crontrol.php');
 
         /**
-         * test plugins installed from ./plugins directory
+         * test 3rd party wpackagist-plugin/<theme> style themes
+         */
+        $isLink = is_link($dest.'/wp-content/themes/twentysixteen');
+        $this->assertSame($isLink, $isSymlinkedBuild);
+        $this->assertDirectoryExists($dest.'/wp-content/themes/twentysixteen');
+        CustomAsserts::assertDirectoryNotEmpty($dest.'/wp-content/themes/twentysixteen');
+        $this->assertFileEquals($thirdPartySrc.'/wp-content/themes/twentysixteen/style.css', $dest.'/wp-content/themes/twentysixteen/style.css');
+
+        /**
+         * test 3rd party plugins installed from ./plugins directory
          */
         $isLink = is_link($dest.'/wp-content/plugins/redirection');
         $this->assertSame($isLink, $isSymlinkedBuild);
@@ -117,18 +134,18 @@ class BuildTest extends TestCase
         $this->assertFileEquals($thirdPartySrc.'/wp-content/plugins/redirection/redirection.php', $dest.'/wp-content/plugins/redirection/redirection.php');
     }
 
-    public function vanillaBuildDataProvider(): array
+    public function johnpblochBuildDataProvider(): array
     {
         return [
-            [true, 'composer-symlinked-vanilla.json'],
-            [false, 'composer-non-symlinked-vanilla.json'],
+            [true, 'composer-symlinked-johnpbloch-defaults.json'],
+            [false, 'composer-non-symlinked-johnpbloch-defaults.json'],
         ];
     }
 
     /**
-     * @dataProvider vanillaBuildDataProvider
+     * @dataProvider johnpblochBuildDataProvider
      */
-    public function testVanillaBuild(bool $isSymlinkedBuild, string $composerJsonFilename): void
+    public function testJohnpblochBuild(bool $isSymlinkedBuild, string $composerJsonFilename): void
     {
         if ($isSymlinkedBuild && DIRECTORY_SEPARATOR === '\\') {
             $this->markTestSkipped('Symlinked builds are not supported on Windows');
@@ -160,7 +177,7 @@ class BuildTest extends TestCase
         }
 
         $firstPartySrc = TEST_PROJECT_ROOT_DIR.'/src';
-        $thirdPartySrc = TEST_PROJECT_ROOT_DIR.'/vendor';
+        $thirdPartySrc = TEST_PROJECT_ROOT_DIR.'/vendor-wp';
         $dest = TEST_PROJECT_ROOT_DIR.'/public';
 
         $this->setupProject($composerJsonFilename);
@@ -239,7 +256,7 @@ class BuildTest extends TestCase
         }
 
         $firstPartySrc = TEST_PROJECT_ROOT_DIR.'/src';
-        $thirdPartySrc = TEST_PROJECT_ROOT_DIR.'/vendor';
+        $thirdPartySrc = TEST_PROJECT_ROOT_DIR.'/vendor-wp';
         $dest = TEST_PROJECT_ROOT_DIR.'/public';
 
         $this->setupProject($composerJsonFilename);
