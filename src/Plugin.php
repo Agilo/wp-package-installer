@@ -84,7 +84,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
         $config = $extra['agilo-wp-package-installer'] ?? [];
         $this->validateConfig($config);
 
-        $this->dest = $this->fs->normalizePath($this->cwd . '/' . $config['dest']);
+        $this->dest = $this->fs->normalizePath($this->cwd . '/' . ($config['dest'] ?? 'wordpress'));
 
         $this->buildCopiers($config);
     }
