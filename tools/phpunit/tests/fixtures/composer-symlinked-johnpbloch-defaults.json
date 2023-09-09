@@ -37,7 +37,7 @@
       "type": "path",
       "url": "./wp-package-installer",
       "options": {
-        "symlink": true
+        "symlink": false
       }
     }
   ],
