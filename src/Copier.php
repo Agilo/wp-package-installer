@@ -87,6 +87,7 @@ class Copier
                 $destPath = str_replace($this->src, $this->dest, $srcPath);
 
                 $this->fs->ensureDirectoryExists(dirname($destPath));
+                Util::remove($this->fs, $destPath);
 
                 if ($this->mode === 'symlink') {
                     $this->fs->relativeSymlink($srcPath, $destPath);
