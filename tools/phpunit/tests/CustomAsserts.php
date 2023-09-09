@@ -9,6 +9,20 @@ use PHPUnit\Framework\Assert;
 
 class CustomAsserts
 {
+    public static function assertFileDoesNotExist(string $filename, string $message = ''): void
+    {
+        method_exists(Assert::class, 'assertFileDoesNotExist')
+            ? Assert::assertFileDoesNotExist($filename, $message) // phpunit 9+
+            : Assert::assertFileNotExists($filename, $message); // older phpunit
+    }
+
+    public static function assertDirectoryDoesNotExist(string $directory, string $message = ''): void
+    {
+        method_exists(Assert::class, 'assertDirectoryDoesNotExist')
+            ? Assert::assertDirectoryDoesNotExist($directory, $message) // phpunit 9+
+            : Assert::assertDirectoryNotExists($directory, $message); // older phpunit
+    }
+
     public static function assertDirectoryNotEmpty(string $directory): void
     {
         $iterator = new FilesystemIterator($directory);

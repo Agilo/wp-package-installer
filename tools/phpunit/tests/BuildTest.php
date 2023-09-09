@@ -21,8 +21,8 @@ class BuildTest extends TestCase
 
         // remove tmp dir if it exists from the last run
         $filesystem->remove(TEST_PROJECT_ROOT_DIR);
-        $this->assertFileNotExists(TEST_PROJECT_ROOT_DIR);
-        $this->assertDirectoryNotExists(TEST_PROJECT_ROOT_DIR);
+        CustomAsserts::assertFileDoesNotExist(TEST_PROJECT_ROOT_DIR);
+        CustomAsserts::assertDirectoryDoesNotExist(TEST_PROJECT_ROOT_DIR);
 
         // copy the test project fixture to a tmp dir
         $filesystem->mirror(TESTS_ROOT_DIR.'/tests/fixtures/test-project', TEST_PROJECT_ROOT_DIR);
@@ -141,7 +141,7 @@ class BuildTest extends TestCase
         $this->assertFileEquals($thirdPartySrc.'/wp-content/plugins/classic-editor/classic-editor.php', $dest.'/wp-content/plugins/classic-editor/classic-editor.php');
     }
 
-    public function johnpblochBuildDataProvider(): array
+    public static function johnpblochBuildDataProvider(): array
     {
         return [
             [true, 'composer-symlinked-johnpbloch-defaults.json'],
@@ -166,7 +166,7 @@ class BuildTest extends TestCase
         $this->assertProjectFiles($isSymlinkedBuild, $firstPartySrc, $thirdPartySrc, $dest);
     }
 
-    public function usualComposerActionsDataProvider(): array
+    public static function usualComposerActionsDataProvider(): array
     {
         return [
             [true, 'composer-symlinked-actions.json'],
@@ -238,14 +238,14 @@ class BuildTest extends TestCase
 
         // check that the plugin was deleted successfully
         $this->assertFalse(is_link($dest.'/wp-content/plugins/duplicate-post'));
-        $this->assertFileNotExists($dest.'/wp-content/plugins/duplicate-post');
-        $this->assertDirectoryNotExists($dest.'/wp-content/plugins/duplicate-post');
+        CustomAsserts::assertFileDoesNotExist($dest.'/wp-content/plugins/duplicate-post');
+        CustomAsserts::assertDirectoryDoesNotExist($dest.'/wp-content/plugins/duplicate-post');
 
         // check that the plugin uninstall didn't break other files
         $this->assertProjectFiles($isSymlinkedBuild, $firstPartySrc, $thirdPartySrc, $dest);
     }
 
-    public function buildWithCustomPathsDataProvider(): array
+    public static function buildWithCustomPathsDataProvider(): array
     {
         return [
             [true, 'composer-symlinked-custom-paths.json'],
@@ -268,17 +268,17 @@ class BuildTest extends TestCase
 
         $this->setupProject($composerJsonFilename);
 
-        $this->assertFileNotExists($dest.'/html');
-        $this->assertFileNotExists($dest.'/phpcs.xml.dist');
+        CustomAsserts::assertFileDoesNotExist($dest.'/html');
+        CustomAsserts::assertFileDoesNotExist($dest.'/phpcs.xml.dist');
 
         $this->assertFileExists($dest.'/scripts/task1.php');
         $this->assertFileEquals($firstPartySrc.'/scripts/task1.php', $dest.'/scripts/task1.php');
-        $this->assertFileNotExists($dest.'/scripts/task2.php');
+        CustomAsserts::assertFileDoesNotExist($dest.'/scripts/task2.php');
 
-        $this->assertFileNotExists($dest.'/wp-content/plugins/query-monitor');
+        CustomAsserts::assertFileDoesNotExist($dest.'/wp-content/plugins/query-monitor');
 
         $this->assertFileExists($dest.'/wp-content/plugins/wp-crontrol/wp-crontrol.php');
         $this->assertFileEquals($thirdPartySrc.'/wp-content/plugins/wp-crontrol/wp-crontrol.php', $dest.'/wp-content/plugins/wp-crontrol/wp-crontrol.php');
-        $this->assertFileNotExists($dest.'/wp-content/plugins/wp-crontrol/readme.md');
+        CustomAsserts::assertFileDoesNotExist($dest.'/wp-content/plugins/wp-crontrol/readme.md');
     }
 }
