@@ -38,6 +38,13 @@ class Plugin implements PluginInterface, EventSubscriberInterface
     /** @var Filesystem */
     private $fs;
 
+    /**
+     * Normalized absolute path to the destination directory without trailing slash.
+     * 
+     * @var string
+     */
+    private $dest;
+
     /** @var Copier[] */
     private $copiers = [];
 
@@ -77,7 +84,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
         $config = $extra['agilo-wp-package-installer'] ?? [];
         $this->validateConfig($config);
 
-        $this->destDir = $this->fs->normalizePath($this->cwd . '/' . $this->dest);
+        $this->dest = $this->fs->normalizePath($this->cwd . '/' . $config['dest']);
 
         $this->buildCopiers($config);
     }
@@ -293,10 +300,11 @@ class Plugin implements PluginInterface, EventSubscriberInterface
         foreach ($sourceNames as $name) {
             $source = $this->getSourceConfig($config, $name);
             $this->copiers[] = new Copier(
+                $name,
                 $this->io,
                 $this->fs,
                 $this->fs->normalizePath($this->cwd . '/' . $source['src']),
-                $this->fs->normalizePath($this->cwd . '/' . $this->dest),
+                $this->dest,
                 $source['mode'],
                 $source['paths']
             );
@@ -435,7 +443,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
         $installPath = $this->composer->getInstallationManager()->getInstallPath($package);
 
         if ($installPath) {
-            $destPath = str_replace($copier->getSrc(), $this->destDir, $installPath);
+            $destPath = str_replace($copier->getSrc(), $this->dest, $installPath);
 
             // strip trailing slashes
             $destPath = rtrim($destPath, '/\\');
