@@ -57,8 +57,10 @@ class Plugin implements PluginInterface, EventSubscriberInterface
             }
         }
 
-        // will throw if can't get cwd
-        $this->cwd = Platform::getCwd();
+        $this->cwd = getcwd();
+        if ($this->cwd === false) {
+            throw new RuntimeException('Could not determine the current working directory.');
+        }
 
         $context = getenv('AGILO_WP_PACKAGE_INSTALLER_CONTEXT');
         if (is_string($context) && $context !== '') {
