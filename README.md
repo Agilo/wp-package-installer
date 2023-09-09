@@ -2,7 +2,7 @@
 
 (WIP) Enables installing WP plugins via Composer 2 (or Composer 1) inside [`johnpbloch/wordpress`](https://github.com/johnpbloch/wordpress). Replaces `drupal-composer/preserve-paths`.
 
-- PHP 7.2+ & 8.0+ is supported
+- PHP 7.2 - 8.3 is supported
 - Composer 1 & 2 is supported
 
 ## Installation / Usage
