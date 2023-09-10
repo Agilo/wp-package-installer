@@ -9,8 +9,33 @@
 
 1. `mkdir your-project && cd your-project`
 2. `composer init`
-3. `composer require agilo/wp-package-installer`
-4. `composer require johnpbloch/wordpress`
+3. Add the following to your `composer.json` extra section:
+
+```json
+{
+  "extra": {
+    "wordpress-install-dir": "public",
+    "installer-paths": {
+      "vendor-wp/wp-content/plugins/{$name}/": ["type:wordpress-plugin"],
+      "vendor-wp/wp-content/themes/{$name}/": ["type:wordpress-theme"],
+      "vendor-wp/wp-content/mu-plugins/{$name}/": ["type:wordpress-muplugin"],
+      "vendor-wp/wp-content/{$name}/": ["type:wordpress-dropin"]
+    },
+    "agilo-wp-package-installer": {
+      "sources": {
+        "third-party": {
+          "src": "vendor-wp",
+          "dest": "public",
+          "mode": "symlink"
+        }
+      }
+    }
+  }
+}
+```
+
+4. `composer require agilo/wp-package-installer`
+5. `composer require johnpbloch/wordpress`
 
 ## Contributing
 
