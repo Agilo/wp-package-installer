@@ -52,10 +52,6 @@
   "extra": {
     "agilo-wp-package-installer": {
       "sources": {
-        "first-party": {
-          "dest": "wordpress",
-          "mode": "symlink"
-        },
         "third-party": {
           "src": ".",
           "dest": "wordpress",

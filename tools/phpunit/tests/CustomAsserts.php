@@ -31,14 +31,14 @@ class CustomAsserts
 
     /**
      * Asserts that the given directory is a valid WordPress directory structure with
-     * common WordPress files and folders present.
+     * common WordPress files and folders present after clean johnpbloch/wordpress installation.
      */
     public static function assertWpDirectoryStructure(string $directory): void
     {
         Assert::assertDirectoryExists($directory);
         Assert::assertDirectoryExists($directory.'/wp-admin');
         Assert::assertDirectoryExists($directory.'/wp-content');
-        Assert::assertDirectoryExists($directory.'/wp-content/mu-plugins');
+        // Assert::assertDirectoryExists($directory.'/wp-content/mu-plugins');
         Assert::assertDirectoryExists($directory.'/wp-content/plugins');
         Assert::assertFileExists($directory.'/wp-content/plugins/index.php');
         Assert::assertDirectoryExists($directory.'/wp-content/themes');
@@ -46,7 +46,7 @@ class CustomAsserts
         Assert::assertFileExists($directory.'/wp-content/index.php');
         Assert::assertDirectoryExists($directory.'/wp-includes');
         Assert::assertFileExists($directory.'/index.php');
-        Assert::assertFileExists($directory.'/wp-config.php');
+        // Assert::assertFileExists($directory.'/wp-config.php');
         Assert::assertFileExists($directory.'/wp-load.php');
     }
 }

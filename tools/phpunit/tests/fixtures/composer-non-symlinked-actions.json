@@ -60,11 +60,12 @@
     "agilo-wp-package-installer": {
       "sources": {
         "first-party": {
-          "src": "src",
           "mode": "copy"
         },
         "third-party": {
-          "src": "vendor-wp",
+          "mode": "copy"
+        },
+        "uploads": {
           "mode": "copy"
         }
       }

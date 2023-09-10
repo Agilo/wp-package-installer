@@ -47,12 +47,8 @@ class BuildTest extends TestCase
         $this->assertSame(0, $process->run(), $process->getCommandLine().' failed with the error below.'.PHP_EOL.$process->getErrorOutput());
     }
 
-    private function assertProjectFiles(bool $isSymlinkedBuild, string $firstPartySrc, string $thirdPartySrc, string $dest): void
+    private function assertFirstPartyProjectFiles(bool $isSymlinkedBuild, string $firstPartySrc, string $thirdPartySrc, string $dest): void
     {
-        /**
-         * test WP directory structure
-         */
-        CustomAsserts::assertWpDirectoryStructure($dest);
         $this->assertFileEquals($firstPartySrc.'/wp-config.php', $dest.'/wp-config.php');
 
         /**
@@ -106,7 +102,10 @@ class BuildTest extends TestCase
         $this->assertSame($isLink, $isSymlinkedBuild);
         $this->assertFileExists($dest.'/wp-content/sunrise.php');
         $this->assertFileEquals($firstPartySrc.'/wp-content/sunrise.php', $dest.'/wp-content/sunrise.php');
+    }
 
+    private function assertThirdPartyProjectFiles(bool $isSymlinkedBuild, string $firstPartySrc, string $thirdPartySrc, string $dest): void
+    {
         /**
          * test 3rd party wpackagist-plugin/<plugin> style plugins
          */
@@ -141,6 +140,41 @@ class BuildTest extends TestCase
         $this->assertFileEquals($thirdPartySrc.'/wp-content/plugins/classic-editor/classic-editor.php', $dest.'/wp-content/plugins/classic-editor/classic-editor.php');
     }
 
+    private function assertUploadsProjectFiles(bool $isSymlinkedBuild, string $firstPartySrc, string $thirdPartySrc, string $dest, string $uploadsSrc): void
+    {
+        $isLink = is_link($dest.'/wp-content/uploads');
+        $this->assertSame($isLink, $isSymlinkedBuild);
+        $this->assertDirectoryExists($dest.'/wp-content/uploads');
+        CustomAsserts::assertDirectoryNotEmpty($dest.'/wp-content/uploads');
+        $this->assertFileEquals($uploadsSrc.'/index.php', $dest.'/wp-content/uploads/index.php');
+        $this->assertFileEquals($uploadsSrc.'/2023/09/328-50x50.jpg', $dest.'/wp-content/uploads/2023/09/328-50x50.jpg');
+    }
+
+    public function testDefaults()
+    {
+        // $firstPartySrc = TEST_PROJECT_ROOT_DIR.'/src';
+        $thirdPartySrc = TEST_PROJECT_ROOT_DIR;
+        $dest = TEST_PROJECT_ROOT_DIR.'/wordpress';
+
+        // test composer.json without any extra config, by default without config our plugin should do nothing
+        $this->setupProject('composer-defaults.json');
+
+        CustomAsserts::assertWpDirectoryStructure($dest);
+
+        // check that composer/installers installed plugins/themes to the default locations
+        $this->assertDirectoryExists($thirdPartySrc.'/wp-content/plugins/query-monitor');
+        $this->assertDirectoryExists($thirdPartySrc.'/wp-content/plugins/classic-editor');
+        $this->assertDirectoryExists($thirdPartySrc.'/wp-content/themes/twentysixteen');
+
+        // check that wp-package-installer didn't install anything
+        CustomAsserts::assertFileDoesNotExist($dest.'/wp-content/plugins/query-monitor');
+        CustomAsserts::assertFileDoesNotExist($dest.'/wp-content/plugins/classic-editor');
+        CustomAsserts::assertFileDoesNotExist($dest.'/wp-content/themes/twentysixteen');
+        CustomAsserts::assertFileDoesNotExist($dest.'/wp-content/uploads');
+        CustomAsserts::assertFileDoesNotExist($dest.'/html');
+        CustomAsserts::assertFileDoesNotExist($dest.'/wp-config.php');
+    }
+
     public static function johnpblochBuildDataProvider(): array
     {
         return [
@@ -163,7 +197,8 @@ class BuildTest extends TestCase
         $dest = TEST_PROJECT_ROOT_DIR.'/wordpress';
 
         $this->setupProject($composerJsonFilename);
-        $this->assertProjectFiles($isSymlinkedBuild, $firstPartySrc, $thirdPartySrc, $dest);
+        CustomAsserts::assertWpDirectoryStructure($dest);
+        $this->assertThirdPartyProjectFiles($isSymlinkedBuild, $firstPartySrc, $thirdPartySrc, $dest);
     }
 
     public static function usualComposerActionsDataProvider(): array
@@ -186,9 +221,13 @@ class BuildTest extends TestCase
         $firstPartySrc = TEST_PROJECT_ROOT_DIR.'/src';
         $thirdPartySrc = TEST_PROJECT_ROOT_DIR.'/vendor-wp';
         $dest = TEST_PROJECT_ROOT_DIR.'/public';
+        $uploadsSrc = TEST_PROJECT_ROOT_DIR.'/shared/uploads';
 
         $this->setupProject($composerJsonFilename);
-        $this->assertProjectFiles($isSymlinkedBuild, $firstPartySrc, $thirdPartySrc, $dest);
+        CustomAsserts::assertWpDirectoryStructure($dest);
+        $this->assertFirstPartyProjectFiles($isSymlinkedBuild, $firstPartySrc, $thirdPartySrc, $dest);
+        $this->assertThirdPartyProjectFiles($isSymlinkedBuild, $firstPartySrc, $thirdPartySrc, $dest);
+        $this->assertUploadsProjectFiles($isSymlinkedBuild, $firstPartySrc, $thirdPartySrc, $dest, $uploadsSrc);
 
         /**
          * test updating WP core
@@ -197,7 +236,10 @@ class BuildTest extends TestCase
         $process->setTimeout(5 * 60);
         $this->assertEquals(0, $process->run(), $process->getCommandLine().' failed with the error below.'.PHP_EOL.$process->getErrorOutput());
 
-        $this->assertProjectFiles($isSymlinkedBuild, $firstPartySrc, $thirdPartySrc, $dest);
+        CustomAsserts::assertWpDirectoryStructure($dest);
+        $this->assertFirstPartyProjectFiles($isSymlinkedBuild, $firstPartySrc, $thirdPartySrc, $dest);
+        $this->assertThirdPartyProjectFiles($isSymlinkedBuild, $firstPartySrc, $thirdPartySrc, $dest);
+        $this->assertUploadsProjectFiles($isSymlinkedBuild, $firstPartySrc, $thirdPartySrc, $dest, $uploadsSrc);
 
         /**
          * test updating existing wpackagist-plugin/<plugin>
@@ -208,7 +250,10 @@ class BuildTest extends TestCase
         $process->setTimeout(5 * 60);
         $this->assertEquals(0, $process->run(), $process->getCommandLine().' failed with the error below.'.PHP_EOL.$process->getErrorOutput());
 
-        $this->assertProjectFiles($isSymlinkedBuild, $firstPartySrc, $thirdPartySrc, $dest);
+        CustomAsserts::assertWpDirectoryStructure($dest);
+        $this->assertFirstPartyProjectFiles($isSymlinkedBuild, $firstPartySrc, $thirdPartySrc, $dest);
+        $this->assertThirdPartyProjectFiles($isSymlinkedBuild, $firstPartySrc, $thirdPartySrc, $dest);
+        $this->assertUploadsProjectFiles($isSymlinkedBuild, $firstPartySrc, $thirdPartySrc, $dest, $uploadsSrc);
 
         /**
          * test installing new wpackagist-plugin/<plugin>
@@ -226,7 +271,10 @@ class BuildTest extends TestCase
         $this->assertFileEquals($thirdPartySrc.'/wp-content/plugins/duplicate-post/duplicate-post.php', $dest.'/wp-content/plugins/duplicate-post/duplicate-post.php');
 
         // check that the new plugin install didn't break other files
-        $this->assertProjectFiles($isSymlinkedBuild, $firstPartySrc, $thirdPartySrc, $dest);
+        CustomAsserts::assertWpDirectoryStructure($dest);
+        $this->assertFirstPartyProjectFiles($isSymlinkedBuild, $firstPartySrc, $thirdPartySrc, $dest);
+        $this->assertThirdPartyProjectFiles($isSymlinkedBuild, $firstPartySrc, $thirdPartySrc, $dest);
+        $this->assertUploadsProjectFiles($isSymlinkedBuild, $firstPartySrc, $thirdPartySrc, $dest, $uploadsSrc);
 
         /**
          * test uninstalling wpackagist-plugin/<plugin>
@@ -242,7 +290,10 @@ class BuildTest extends TestCase
         CustomAsserts::assertDirectoryDoesNotExist($dest.'/wp-content/plugins/duplicate-post');
 
         // check that the plugin uninstall didn't break other files
-        $this->assertProjectFiles($isSymlinkedBuild, $firstPartySrc, $thirdPartySrc, $dest);
+        CustomAsserts::assertWpDirectoryStructure($dest);
+        $this->assertFirstPartyProjectFiles($isSymlinkedBuild, $firstPartySrc, $thirdPartySrc, $dest);
+        $this->assertThirdPartyProjectFiles($isSymlinkedBuild, $firstPartySrc, $thirdPartySrc, $dest);
+        $this->assertUploadsProjectFiles($isSymlinkedBuild, $firstPartySrc, $thirdPartySrc, $dest, $uploadsSrc);
     }
 
     public static function buildWithCustomPathsDataProvider(): array
