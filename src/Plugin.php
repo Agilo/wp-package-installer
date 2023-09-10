@@ -287,14 +287,7 @@ class Plugin implements PluginInterface, EventSubscriberInterface
 
     private function buildCopiers($config)
     {
-        $sourceNames = array_keys(array_merge(
-            $config['sources'] ?? [],
-            [
-                'first-party' => [],
-                'third-party' => [],
-                'uploads'     => [],
-            ]
-        ));
+        $sourceNames = array_keys($config['sources'] ?? []);
 
         foreach ($sourceNames as $name) {
             $source = $this->getSourceConfig($config, $name);
@@ -310,10 +303,11 @@ class Plugin implements PluginInterface, EventSubscriberInterface
         }
     }
 
+    /**
+     * Get source config for a given source name or throw if not found.
+     */
     private function getSourceConfig($config, $name): array
     {
-        $sources = $config['sources'] ?? [];
-
         if ($name === 'first-party') {
             $default = [
                 'src'   => 'src',
@@ -343,15 +337,12 @@ class Plugin implements PluginInterface, EventSubscriberInterface
             ];
         }
 
-        if ($name === 'first-party') {
-            $source = $sources[$name] ?? [];
-        } elseif ($name === 'third-party') {
-            $source = $sources[$name] ?? [];
-        } elseif ($name === 'uploads') {
-            $source = $sources[$name] ?? [];
-        } elseif (!isset($sources[$name])) {
+        $sources = $config['sources'] ?? [];
+
+        if (!isset($sources[$name])) {
             throw new InvalidArgumentException('composer.extra.agilo-wp-package-installer.sources.' . $name . ' is not set.');
         }
+        $source = $sources[$name];
 
         $override = $config['overrides'][$this->context]['sources'][$name] ?? [];
 
